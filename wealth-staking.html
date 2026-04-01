@@ -3,72 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WealthApp Staking Prototype</title>
+    <title>Account 00001241 Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom scrollbar for a cleaner look */
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .hidden { display: none !important; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased h-screen flex overflow-hidden">
+<body class="bg-slate-100 text-slate-800 font-sans antialiased h-screen flex flex-col overflow-hidden">
 
-    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col hidden md:flex">
-        <div class="p-6 font-bold text-white text-xl border-b border-slate-700">WealthApp UI</div>
-        <nav class="flex-1 p-4 space-y-2">
-            <a href="#" class="block p-3 rounded hover:bg-slate-800 transition">Dashboard</a>
-            <a href="#" class="block p-3 rounded hover:bg-slate-800 transition">Wallets</a>
-            <a href="#" class="block p-3 rounded bg-blue-600 text-white shadow-sm">Staking Hub</a>
-            <a href="#" class="block p-3 rounded hover:bg-slate-800 transition">Reporting</a>
-        </nav>
-    </aside>
+    <nav class="bg-slate-900 text-white px-6 py-3 flex justify-between items-center z-10">
+        <div class="flex items-center space-x-6">
+            <div class="font-bold text-lg tracking-tight">WealthApp</div>
+            <div class="text-slate-400 text-sm">Client Portal > Account 00001241</div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <label class="flex items-center space-x-2 cursor-pointer bg-slate-800 px-3 py-1.5 rounded-full text-sm border border-slate-700">
+                <input type="checkbox" id="demo-toggle" class="rounded text-blue-500 focus:ring-blue-500 bg-slate-700 border-slate-600" onchange="toggleDemoMode()">
+                <span class="text-slate-300 font-medium">Demo: +20 ETH</span>
+            </label>
+            <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm">SJ</div>
+        </div>
+    </nav>
 
-    <main class="flex-1 flex flex-col h-full overflow-y-auto">
-        <header class="bg-white border-b border-slate-200 p-6 flex justify-between items-center sticky top-0 z-10">
-            <h1 class="text-2xl font-semibold text-slate-800">Staking Hub</h1>
-            <div class="flex items-center space-x-4">
-                <div class="text-sm text-slate-500">Wealth Manager: <span class="font-semibold text-slate-700">Sarah Jenkins</span></div>
-                <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">SJ</div>
-            </div>
-        </header>
-
-        <div class="p-8 max-w-6xl mx-auto w-full space-y-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <div class="text-sm text-slate-500 font-medium mb-1">Total Staked</div>
-                    <div class="text-3xl font-bold">$1,240,500.00</div>
-                </div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <div class="text-sm text-slate-500 font-medium mb-1">Pending Activation</div>
-                    <div class="text-3xl font-bold text-orange-500" id="global-pending">$0.00</div>
-                </div>
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <div class="text-sm text-slate-500 font-medium mb-1">Lifetime Rewards</div>
-                    <div class="text-3xl font-bold text-green-600">$12,450.20</div>
+    <main class="flex-1 overflow-y-auto p-8">
+        <div class="max-w-7xl mx-auto space-y-6">
+            
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Account 00001241</h1>
+                    <p class="text-slate-500 mt-1 font-medium">Anchorage Demo Firm — 2% per year</p>
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Market Value</div>
+                    <div class="text-2xl font-bold" id="market-value">$93,604.31</div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Cash</div>
+                    <div class="text-2xl font-bold">$17,265.53</div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Buying Power</div>
+                    <div class="text-2xl font-bold">$17,165.53</div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Thirty Days</div>
+                    <div class="text-2xl font-bold text-green-600">+$1,519.42</div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Total Gain/Loss</div>
+                    <div class="text-2xl font-bold text-red-600">-$13,170.52</div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-8">
                 <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                    <h2 class="font-semibold text-slate-800">Available Assets</h2>
+                    <h2 class="font-semibold text-slate-800 text-lg">Assets</h2>
+                    <span class="text-sm font-medium text-slate-500">Total Assets: <span id="table-total">$93,604.31</span></span>
                 </div>
-                <div class="divide-y divide-slate-100" id="asset-list">
-                    </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-3">Asset</th>
+                                <th class="px-6 py-3 text-right">%</th>
+                                <th class="px-6 py-3 text-right">Quantity</th>
+                                <th class="px-6 py-3 text-right">Held (Staked)</th>
+                                <th class="px-6 py-3 text-right">Balance</th>
+                                <th class="px-6 py-3 text-right">Cost Basis</th>
+                                <th class="px-6 py-3 text-right">Gain/Loss</th>
+                                <th class="px-6 py-3 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assets-tbody" class="divide-y divide-slate-100">
+                            </tbody>
+                    </table>
+                </div>
             </div>
 
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50">
-                    <h2 class="font-semibold text-slate-800">Active Positions</h2>
-                </div>
-                <div class="p-6 text-center text-slate-500" id="empty-state">
-                    No active or pending staking positions.
-                </div>
-                <div class="divide-y divide-slate-100 hidden" id="positions-list">
-                    </div>
-            </div>
         </div>
     </main>
 
@@ -77,28 +103,28 @@
             
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 class="font-semibold text-lg" id="modal-title">Stake Asset</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition">&times;</button>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition text-xl">&times;</button>
             </div>
 
             <div id="step-1" class="p-6 space-y-6">
                 <div class="flex justify-between items-center bg-blue-50 p-4 rounded-lg border border-blue-100">
                     <div>
-                        <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">Selected Account</div>
-                        <div class="font-medium text-slate-800" id="selected-account-name">Main Vault</div>
+                        <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">Available to Stake</div>
+                        <div class="font-bold text-slate-800 text-lg" id="selected-available">0.000000</div>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">Available</div>
-                        <div class="font-bold text-slate-800" id="selected-available">0.00</div>
+                        <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">Asset</div>
+                        <div class="font-bold text-slate-800 text-lg" id="selected-ticker">ETH</div>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Amount to Stake</label>
+                    <div class="flex justify-between items-end mb-2">
+                        <label class="block text-sm font-medium text-slate-700">Amount to Stake</label>
+                        <button onclick="setMax()" class="text-xs text-blue-600 font-medium hover:underline">Max Available</button>
+                    </div>
                     <div class="relative">
                         <input type="number" id="stake-amount" class="w-full border border-slate-300 rounded-lg p-3 pr-16 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="0.00">
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <span class="text-slate-400 font-medium" id="asset-ticker">ETH</span>
-                        </div>
                     </div>
                     <p class="text-sm mt-2 text-slate-500" id="amount-hint">Minimum 32 ETH required.</p>
                 </div>
@@ -108,59 +134,20 @@
                 </div>
             </div>
 
-            <div id="step-2" class="p-6 space-y-6 hidden">
-                <div class="bg-slate-50 rounded-lg p-4 space-y-3 text-sm border border-slate-200">
-                    <div class="flex justify-between">
-                        <span class="text-slate-500">Asset</span>
-                        <span class="font-medium" id="review-asset">ETH</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-slate-500">Amount</span>
-                        <span class="font-medium" id="review-amount">0.00</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-slate-500">Est. Protocol Yield</span>
-                        <span class="font-medium text-green-600" id="review-yield">~3.4% APR</span>
-                    </div>
-                    <div class="flex justify-between border-t border-slate-200 pt-3 mt-3">
-                        <span class="text-slate-500">Status Timeline</span>
-                        <span class="font-medium text-right" id="review-timing">Pending Activation<br><span class="text-xs text-slate-400">Can take 1-3 days on-chain</span></span>
-                    </div>
-                </div>
-
-                <div class="bg-orange-50 border border-orange-100 rounded-lg p-4 flex items-start space-x-3">
-                    <div class="mt-0.5 text-orange-500">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </div>
-                    <div class="text-xs text-orange-800 space-y-2">
-                        <p><strong>Withdrawal Notice:</strong> Unstaking is not immediate. Protocol exit queues govern withdrawal timing.</p>
-                        <label class="flex items-center space-x-2 cursor-pointer mt-2">
-                            <input type="checkbox" id="consent-check" class="rounded border-orange-300 text-orange-600 focus:ring-orange-500" onchange="toggleSubmitBtn()">
-                            <span>I acknowledge protocol terms and timing risks.</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-slate-100 flex justify-between">
-                    <button onclick="goToInput()" class="text-slate-500 hover:text-slate-800 font-medium px-4 py-2">Back</button>
-                    <button onclick="submitStake()" id="btn-submit" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>Confirm & Submit</button>
-                </div>
-            </div>
-
-            <div id="step-3" class="p-10 flex flex-col items-center justify-center space-y-4 hidden">
+            <div id="step-2" class="p-10 flex flex-col items-center justify-center space-y-4 hidden">
                 <div class="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
                 <h3 class="font-semibold text-lg text-slate-800">Broadcasting Request</h3>
-                <p class="text-sm text-slate-500 text-center">Interacting with protocol contracts...</p>
+                <p class="text-sm text-slate-500 text-center">Allocating funds to staking contract...</p>
             </div>
 
-            <div id="step-4" class="p-8 text-center space-y-4 hidden">
+            <div id="step-3" class="p-8 text-center space-y-4 hidden">
                 <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 </div>
-                <h3 class="font-semibold text-xl text-slate-800">Stake Request Submitted</h3>
-                <p class="text-sm text-slate-500 max-w-xs mx-auto">Your asset is moving to <span class="font-semibold text-slate-700">Pending Activation</span>. It will begin earning rewards once the protocol epoch activates.</p>
+                <h3 class="font-semibold text-xl text-slate-800">Staking Initiated</h3>
+                <p class="text-sm text-slate-500 max-w-xs mx-auto">Your asset has been moved to <span class="font-semibold text-slate-700">Held Quantity</span> and is currently pending protocol activation.</p>
                 <div class="pt-6">
-                    <button onclick="finishStake()" class="w-full bg-slate-100 text-slate-800 px-6 py-2.5 rounded-lg font-medium hover:bg-slate-200 transition">View Positions</button>
+                    <button onclick="finishStake()" class="w-full bg-slate-100 text-slate-800 px-6 py-2.5 rounded-lg font-medium hover:bg-slate-200 transition">Return to Account</button>
                 </div>
             </div>
 
@@ -168,80 +155,105 @@
     </div>
 
     <script>
-        // Data Model Mocking
-        const accounts = [
-            { id: 1, name: 'Alpha Fund', asset: 'ETH', balance: 140.5, staked: 0, minReq: 32, yield: '~3.4% APR', timing: '1-3 days' },
-            { id: 2, name: 'Retail Vault A', asset: 'ETH', balance: 12.0, staked: 0, minReq: 32, yield: '~3.4% APR', timing: '1-3 days' }, // Ineligible (below 32)
-            { id: 3, name: 'High Net SOL', asset: 'SOL', balance: 5000.0, staked: 0, minReq: 2, yield: '~7.1% APR', timing: 'Epoch boundary (~2-3 days)', rentNotice: true }
+        // Initial Data Model (Matching user input)
+        const formatCurrency = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+        const formatNumber = (num, decimals = 6) => new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(num);
+
+        let assets = [
+            { id: 'ETH', name: 'ETH', pct: '41.94%', qty: 18.364200, held: 0.000000, bal: 39254.29, cost: 41392.62, gl: -2138.33, minReq: 32, stakable: true },
+            { id: 'BTC', name: 'BTC', pct: '39.62%', qty: 0.544605, held: 0.000000, bal: 37084.49, cost: 48216.68, gl: -11132.19, minReq: null, stakable: false },
+            { id: 'SOL', name: 'SOL', pct: '5.20%', qty: 35.000000, held: 0.000000, bal: 4850.00, cost: 4000.00, gl: 850.00, minReq: 2, stakable: true }, // Added for immediate demo purposes
+            { id: 'USD', name: 'USD', pct: '18.45%', qty: 17265.525000, held: 100.000000, bal: 17265.53, cost: 17165.53, gl: 100.00, minReq: null, stakable: false }
         ];
 
-        let activeAccount = null;
-        let positions = [];
+        let activeAssetId = null;
+        let isDemoMode = false;
 
-        // DOM Elements
-        const assetListEl = document.getElementById('asset-list');
-        const modal = document.getElementById('wizard-modal');
-        const modalContent = document.getElementById('wizard-content');
-        const amountInput = document.getElementById('stake-amount');
-        const btnReview = document.getElementById('btn-review');
-        const consentCheck = document.getElementById('consent-check');
-        const btnSubmit = document.getElementById('btn-submit');
+        // Render Table
+        function renderTable() {
+            const tbody = document.getElementById('assets-tbody');
+            tbody.innerHTML = '';
+            
+            let totalBal = 0;
 
-        // Render Asset List
-        function renderAssets() {
-            assetListEl.innerHTML = '';
-            accounts.forEach(acc => {
-                const isEligible = acc.balance >= acc.minReq;
-                const row = document.createElement('div');
-                row.className = 'p-6 flex items-center justify-between hover:bg-slate-50 transition';
+            assets.forEach(a => {
+                totalBal += a.bal;
+                const availableQty = a.qty - a.held;
+                const isEligible = a.stakable && availableQty >= a.minReq;
+                const glClass = a.gl >= 0 ? 'text-green-600' : 'text-red-600';
                 
-                row.innerHTML = `
-                    <div class="flex items-center space-x-4">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${acc.asset === 'ETH' ? 'bg-indigo-100 text-indigo-700' : 'bg-purple-100 text-purple-700'}">${acc.asset}</div>
-                        <div>
-                            <div class="font-semibold text-slate-800">${acc.name}</div>
-                            <div class="text-sm text-slate-500">Available: ${acc.balance} ${acc.asset}</div>
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-end">
-                        ${isEligible 
-                            ? `<button onclick="openModal(${acc.id})" class="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg font-medium hover:bg-blue-100 transition border border-blue-200">Stake</button>`
-                            : `<div class="group relative">
-                                <button disabled class="bg-slate-100 text-slate-400 px-4 py-2 rounded-lg font-medium cursor-not-allowed">Stake</button>
-                                <div class="absolute bottom-full right-0 mb-2 w-48 bg-slate-800 text-white text-xs rounded p-2 opacity-0 group-hover:opacity-100 transition pointer-events-none">Requires minimum ${acc.minReq} ${acc.asset}</div>
-                               </div>`
-                        }
-                    </div>
+                let actionHtml = '';
+                if (a.stakable) {
+                    if (isEligible) {
+                        actionHtml = `<button onclick="openModal('${a.id}')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-4 py-1.5 rounded-md font-medium text-xs hover:bg-indigo-100 transition w-full">Stake</button>`;
+                    } else {
+                        actionHtml = `
+                            <div class="tooltip relative inline-block w-full text-center">
+                                <button disabled class="bg-slate-100 text-slate-400 border border-slate-200 px-4 py-1.5 rounded-md font-medium text-xs cursor-not-allowed w-full">Stake</button>
+                                <span class="tooltip-text w-32 bg-slate-800 text-white text-xs rounded py-1 px-2 absolute z-10 bottom-full left-1/2 -ml-16 mb-2">Requires ${a.minReq} ${a.name}</span>
+                            </div>
+                        `;
+                    }
+                } else {
+                    actionHtml = `<span class="text-slate-300 text-xs italic">N/A</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-semibold text-slate-900">${a.name}</td>
+                    <td class="px-6 py-4 text-right">${a.pct}</td>
+                    <td class="px-6 py-4 text-right font-medium">${formatNumber(a.qty)}</td>
+                    <td class="px-6 py-4 text-right ${a.held > 0 ? 'text-indigo-600 font-semibold' : 'text-slate-400'}">${formatNumber(a.held)}</td>
+                    <td class="px-6 py-4 text-right">${formatCurrency(a.bal)}</td>
+                    <td class="px-6 py-4 text-right">${formatCurrency(a.cost)}</td>
+                    <td class="px-6 py-4 text-right ${glClass}">${formatCurrency(a.gl)}</td>
+                    <td class="px-6 py-4 text-center align-middle">${actionHtml}</td>
                 `;
-                assetListEl.appendChild(row);
+                tbody.appendChild(tr);
             });
+
+            document.getElementById('market-value').innerText = formatCurrency(totalBal);
+            document.getElementById('table-total').innerText = formatCurrency(totalBal);
         }
 
-        // Modal Flow Logic
-        function openModal(accountId) {
-            activeAccount = accounts.find(a => a.id === accountId);
-            
-            // Reset Wizard
+        // Demo Toggle Logic
+        function toggleDemoMode() {
+            isDemoMode = !isDemoMode;
+            const eth = assets.find(a => a.id === 'ETH');
+            if (isDemoMode) {
+                eth.qty += 20; // Pushes it over 32
+                eth.bal += 42000; // Fake value bump
+            } else {
+                eth.qty -= 20;
+                eth.bal -= 42000;
+            }
+            renderTable();
+        }
+
+        // Modal Logic
+        const amountInput = document.getElementById('stake-amount');
+        const btnReview = document.getElementById('btn-review');
+
+        function openModal(assetId) {
+            activeAssetId = assetId;
+            const asset = assets.find(a => a.id === assetId);
+            const available = asset.qty - asset.held;
+
             document.getElementById('step-1').classList.remove('hidden');
             document.getElementById('step-2').classList.add('hidden');
             document.getElementById('step-3').classList.add('hidden');
-            document.getElementById('step-4').classList.add('hidden');
+            
+            document.getElementById('modal-title').innerText = `Stake ${asset.name}`;
+            document.getElementById('selected-available').innerText = formatNumber(available);
+            document.getElementById('selected-ticker').innerText = asset.name;
+            document.getElementById('amount-hint').innerText = `Minimum ${asset.minReq} ${asset.name} required.`;
+            
             amountInput.value = '';
             btnReview.disabled = true;
-            consentCheck.checked = false;
-            btnSubmit.disabled = true;
 
-            // Populate Data
-            document.getElementById('modal-title').innerText = `Stake ${activeAccount.asset}`;
-            document.getElementById('selected-account-name').innerText = activeAccount.name;
-            document.getElementById('selected-available').innerText = `${activeAccount.balance} ${activeAccount.asset}`;
-            document.getElementById('asset-ticker').innerText = activeAccount.asset;
-            
-            let hint = `Minimum ${activeAccount.minReq} ${activeAccount.asset} required.`;
-            if(activeAccount.rentNotice) hint += ` (Account rent applies)`;
-            document.getElementById('amount-hint').innerText = hint;
-
-            // Show Modal
+            const modal = document.getElementById('wizard-modal');
+            const modalContent = document.getElementById('wizard-content');
             modal.classList.remove('hidden');
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
@@ -250,114 +262,58 @@
         }
 
         function closeModal() {
+            const modal = document.getElementById('wizard-modal');
+            const modalContent = document.getElementById('wizard-content');
             modal.classList.add('opacity-0');
             modalContent.classList.add('translate-y-4');
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
 
-        // Input Validation
-        amountInput.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value);
-            if (val >= activeAccount.minReq && val <= activeAccount.balance) {
+        function setMax() {
+            const asset = assets.find(a => a.id === activeAssetId);
+            const available = asset.qty - asset.held;
+            amountInput.value = available;
+            validateInput();
+        }
+
+        function validateInput() {
+            const asset = assets.find(a => a.id === activeAssetId);
+            const available = asset.qty - asset.held;
+            const val = parseFloat(amountInput.value);
+            
+            if (val >= asset.minReq && val <= available) {
                 btnReview.disabled = false;
             } else {
                 btnReview.disabled = true;
             }
-        });
+        }
+
+        amountInput.addEventListener('input', validateInput);
 
         function goToReview() {
-            const val = parseFloat(amountInput.value);
-            document.getElementById('review-asset').innerText = activeAccount.asset;
-            document.getElementById('review-amount').innerText = `${val} ${activeAccount.asset}`;
-            document.getElementById('review-yield').innerText = activeAccount.yield;
-            document.getElementById('review-timing').innerHTML = `Pending Activation<br><span class="text-xs text-slate-400">${activeAccount.timing}</span>`;
-            
             document.getElementById('step-1').classList.add('hidden');
             document.getElementById('step-2').classList.remove('hidden');
-        }
 
-        function goToInput() {
-            document.getElementById('step-2').classList.add('hidden');
-            document.getElementById('step-1').classList.remove('hidden');
-        }
-
-        function toggleSubmitBtn() {
-            btnSubmit.disabled = !consentCheck.checked;
-        }
-
-        function submitStake() {
-            document.getElementById('step-2').classList.add('hidden');
-            document.getElementById('step-3').classList.remove('hidden');
-
-            // Simulate API / Blockchain delay
+            // Simulate API interaction
             setTimeout(() => {
-                document.getElementById('step-3').classList.add('hidden');
-                document.getElementById('step-4').classList.remove('hidden');
+                document.getElementById('step-2').classList.add('hidden');
+                document.getElementById('step-3').classList.remove('hidden');
                 
-                // Update Data Model
-                const stakedAmount = parseFloat(amountInput.value);
-                activeAccount.balance -= stakedAmount;
+                // Update underlying data model
+                const asset = assets.find(a => a.id === activeAssetId);
+                const stakedAmt = parseFloat(amountInput.value);
+                asset.held += stakedAmt; // Move from Available to Held (Staked)
                 
-                positions.unshift({
-                    id: Date.now(),
-                    accountName: activeAccount.name,
-                    asset: activeAccount.asset,
-                    amount: stakedAmount,
-                    status: 'Pending Activation'
-                });
-
-            }, 2000);
+            }, 1800);
         }
 
         function finishStake() {
             closeModal();
-            renderAssets();
-            renderPositions();
-            
-            // Update Global Pending Mock
-            document.getElementById('global-pending').innerText = `$${(parseFloat(amountInput.value) * (activeAccount.asset === 'ETH' ? 2000 : 100)).toLocaleString()}`;
+            renderTable(); // Re-render table to show updated "Held" column
         }
 
-        function renderPositions() {
-            const emptyState = document.getElementById('empty-state');
-            const posList = document.getElementById('positions-list');
-
-            if (positions.length === 0) {
-                emptyState.classList.remove('hidden');
-                posList.classList.add('hidden');
-                return;
-            }
-
-            emptyState.classList.add('hidden');
-            posList.classList.remove('hidden');
-            posList.innerHTML = '';
-
-            positions.forEach(pos => {
-                const row = document.createElement('div');
-                row.className = 'p-6 flex items-center justify-between';
-                row.innerHTML = `
-                    <div class="flex items-center space-x-4">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm bg-slate-100 text-slate-600 border border-slate-200">${pos.asset}</div>
-                        <div>
-                            <div class="font-semibold text-slate-800">${pos.amount} ${pos.asset}</div>
-                            <div class="text-sm text-slate-500">${pos.accountName}</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <span class="inline-flex items-center rounded-md bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-orange-500 mr-1.5 animate-pulse"></span>
-                            ${pos.status}
-                        </span>
-                        <button class="text-slate-400 hover:text-slate-600 text-sm font-medium px-2">Details</button>
-                    </div>
-                `;
-                posList.appendChild(row);
-            });
-        }
-
-        // Initialize
-        renderAssets();
-        renderPositions();
+        // Init
+        renderTable();
     </script>
 </body>
 </html>
