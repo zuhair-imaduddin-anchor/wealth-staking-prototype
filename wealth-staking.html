@@ -28,14 +28,21 @@
             margin: 0 auto;
         }
 
-        h1 {
-            font-size: 24px;
-            margin-bottom: 8px;
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 32px;
         }
 
-        p.subtitle {
+        .header-content h1 {
+            font-size: 24px;
+            margin: 0 0 8px 0;
+        }
+
+        .header-content p.subtitle {
             color: var(--text-muted);
-            margin-bottom: 32px;
+            margin: 0;
         }
 
         .card {
@@ -72,9 +79,6 @@
 
         .asset-name {
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .apy {
@@ -96,6 +100,11 @@
             opacity: 0.9;
         }
 
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .btn-primary {
             background-color: var(--primary);
             color: white;
@@ -105,6 +114,12 @@
             background-color: white;
             color: var(--text-main);
             border: 1px solid var(--border);
+        }
+
+        .btn-danger {
+            background-color: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FCA5A5;
         }
 
         .actions {
@@ -190,8 +205,13 @@
 <body>
 
 <div class="container">
-    <h1>Account Portfolio</h1>
-    <p class="subtitle">Manage your assets and earn yield through staking.</p>
+    <div class="header-flex">
+        <div class="header-content">
+            <h1>Account Portfolio</h1>
+            <p class="subtitle">Manage your assets and earn yield through staking.</p>
+        </div>
+        <button class="btn btn-secondary" onclick="restartDemo()">⟳ Restart Demo</button>
+    </div>
 
     <div class="card">
         <table>
@@ -206,50 +226,8 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td><span class="asset-name">Ethereum (ETH)</span></td>
-                    <td>100.00</td>
-                    <td>68.00</td>
-                    <td>32.00</td>
-                    <td><span class="apy">3.5%</span></td>
-                    <td>0.45 ETH</td>
-                    <td>
-                        <div class="actions">
-                            <button class="btn btn-primary" onclick="openModal('stake', 'ETH', 68.00)">Stake</button>
-                            <button class="btn btn-secondary" onclick="openModal('unstake', 'ETH', 32.00)">Unstake</button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td><span class="asset-name">Solana (SOL)</span></td>
-                    <td>500.00</td>
-                    <td>500.00</td>
-                    <td>0.00</td>
-                    <td><span class="apy">6.8%</span></td>
-                    <td>0.00 SOL</td>
-                    <td>
-                        <div class="actions">
-                            <button class="btn btn-primary" onclick="openModal('stake', 'SOL', 500.00)">Stake</button>
-                            <button class="btn btn-secondary" style="opacity: 0.5; cursor: not-allowed;" disabled>Unstake</button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td><span class="asset-name">Bitcoin (BTC)</span><br><small style="color:#6B7280; font-weight:normal;">Lending Yield</small></td>
-                    <td>2.50</td>
-                    <td>2.50</td>
-                    <td>0.00</td>
-                    <td><span class="apy">1.2%</span></td>
-                    <td>0.00 BTC</td>
-                    <td>
-                        <div class="actions">
-                            <button class="btn btn-primary" onclick="openModal('stake', 'BTC', 2.50)">Earn</button>
-                            <button class="btn btn-secondary" style="opacity: 0.5; cursor: not-allowed;" disabled>Withdraw</button>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
+            <tbody id="portfolioTable">
+                </tbody>
         </table>
     </div>
 </div>
@@ -265,7 +243,7 @@
             </div>
             <div class="helper-text">
                 <span id="availableAmount">Available: 0.00</span>
-                <a href="#" style="color: var(--primary); text-decoration: none;" onclick="setMax()">Max</a>
+                <a href="#" style="color: var(--primary); text-decoration: none;" onclick="setMax(event)">Max</a>
             </div>
         </div>
         
@@ -281,33 +259,79 @@
 </div>
 
 <script>
-    let currentAction = '';
-    let currentAsset = '';
-    let currentMax = 0;
+    // Initial State Definition
+    const initialState = {
+        ETH: { name: 'Ethereum', ticker: 'ETH', total: 100.00, available: 68.00, staked: 32.00, apy: '3.5%', rewards: 0.45, isStakable: true },
+        SOL: { name: 'Solana', ticker: 'SOL', total: 500.00, available: 500.00, staked: 0.00, apy: '6.8%', rewards: 0.00, isStakable: true },
+        BTC: { name: 'Bitcoin', ticker: 'BTC', total: 2.50, available: 2.50, staked: 0.00, apy: '-', rewards: 0.00, isStakable: false }
+    };
 
-    function openModal(action, asset, maxAmount) {
+    // Deep copy for active state
+    let state = JSON.parse(JSON.stringify(initialState));
+
+    let currentAction = '';
+    let currentTicker = '';
+
+    function renderTable() {
+        const tbody = document.getElementById('portfolioTable');
+        tbody.innerHTML = ''; // Clear table
+
+        for (const key in state) {
+            const asset = state[key];
+            const tr = document.createElement('tr');
+            
+            let actionsHTML = '';
+            if (asset.isStakable) {
+                const disableUnstake = asset.staked <= 0 ? 'disabled' : '';
+                const disableStake = asset.available <= 0 ? 'disabled' : '';
+                actionsHTML = `
+                    <div class="actions">
+                        <button class="btn btn-primary" ${disableStake} onclick="openModal('stake', '${asset.ticker}')">Stake</button>
+                        <button class="btn btn-secondary" ${disableUnstake} onclick="openModal('unstake', '${asset.ticker}')">Unstake</button>
+                    </div>
+                `;
+            } else {
+                actionsHTML = `<span style="color: var(--text-muted); font-size: 13px;">Not Eligible</span>`;
+            }
+
+            tr.innerHTML = `
+                <td><span class="asset-name">${asset.name} (${asset.ticker})</span></td>
+                <td>${asset.total.toFixed(2)}</td>
+                <td>${asset.available.toFixed(2)}</td>
+                <td>${asset.staked.toFixed(2)}</td>
+                <td>${asset.apy !== '-' ? `<span class="apy">${asset.apy}</span>` : '-'}</td>
+                <td>${asset.rewards.toFixed(2)} ${asset.ticker}</td>
+                <td>${actionsHTML}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+    }
+
+    function openModal(action, ticker) {
         currentAction = action;
-        currentAsset = asset;
-        currentMax = maxAmount;
+        currentTicker = ticker;
+        
+        const asset = state[ticker];
+        const maxAmount = action === 'stake' ? asset.available : asset.staked;
 
         const modal = document.getElementById('actionModal');
         const title = document.getElementById('modalTitle');
         const label = document.getElementById('modalLabel');
-        const ticker = document.getElementById('assetTicker');
+        const tickerSpan = document.getElementById('assetTicker');
         const availableText = document.getElementById('availableAmount');
         const confirmBtn = document.getElementById('confirmBtn');
         const input = document.getElementById('amountInput');
 
         input.value = ''; // reset input
-        ticker.innerText = asset;
-        availableText.innerText = `${action === 'stake' ? 'Available' : 'Staked'}: ${maxAmount.toFixed(2)} ${asset}`;
+        tickerSpan.innerText = ticker;
+        availableText.innerText = `${action === 'stake' ? 'Available to stake' : 'Available to unstake'}: ${maxAmount.toFixed(2)} ${ticker}`;
 
         if (action === 'stake') {
-            title.innerText = `Stake ${asset}`;
+            title.innerText = `Stake ${ticker}`;
             label.innerText = 'Amount to stake';
             confirmBtn.innerText = 'Confirm Stake';
         } else {
-            title.innerText = `Unstake ${asset}`;
+            title.innerText = `Unstake ${ticker}`;
             label.innerText = 'Amount to unstake';
             confirmBtn.innerText = 'Confirm Unstake';
         }
@@ -319,21 +343,49 @@
         document.getElementById('actionModal').style.display = 'none';
     }
 
-    function setMax() {
-        document.getElementById('amountInput').value = currentMax;
+    function setMax(event) {
+        event.preventDefault(); // Prevent page jump
+        const asset = state[currentTicker];
+        const maxAmount = currentAction === 'stake' ? asset.available : asset.staked;
+        document.getElementById('amountInput').value = maxAmount;
     }
 
     function confirmAction() {
-        const amount = document.getElementById('amountInput').value;
-        if (!amount || amount <= 0 || amount > currentMax) {
-            alert('Please enter a valid amount.');
+        const inputVal = parseFloat(document.getElementById('amountInput').value);
+        const asset = state[currentTicker];
+        const maxAmount = currentAction === 'stake' ? asset.available : asset.staked;
+
+        if (isNaN(inputVal) || inputVal <= 0) {
+            alert('Please enter a valid amount greater than 0.');
+            return;
+        }
+
+        if (inputVal > maxAmount) {
+            alert('You cannot exceed your available balance.');
             return;
         }
         
-        // Mock success message
-        alert(`Successfully submitted request to ${currentAction} ${amount} ${currentAsset}!`);
+        // Execute the state change
+        if (currentAction === 'stake') {
+            asset.available -= inputVal;
+            asset.staked += inputVal;
+        } else if (currentAction === 'unstake') {
+            asset.staked -= inputVal;
+            asset.available += inputVal;
+        }
+
+        // Re-render and close
+        renderTable();
         closeModal();
     }
+
+    function restartDemo() {
+        state = JSON.parse(JSON.stringify(initialState));
+        renderTable();
+    }
+
+    // Initialize table on load
+    window.onload = renderTable;
 </script>
 
 </body>
