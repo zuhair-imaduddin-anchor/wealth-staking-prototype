@@ -3,151 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Account 00001241 Dashboard</title>
+    <title>WealthApp - Crypto Staking Prototype</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .tooltip .tooltip-text {
-            visibility: hidden;
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .tooltip:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-        }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f8fafc; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans antialiased h-screen flex flex-col overflow-hidden">
+<body class="bg-slate-50 text-slate-800 font-sans p-6">
 
-    <nav class="bg-slate-900 text-white px-6 py-3 flex justify-between items-center z-10">
-        <div class="flex items-center space-x-6">
-            <div class="font-bold text-lg tracking-tight">WealthApp</div>
-            <div class="text-slate-400 text-sm">Client Portal > Account 00001241</div>
+    <header class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900">Account Dashboard</h1>
+            <p class="text-slate-500">Wealth Manager Portal</p>
         </div>
-        <div class="flex items-center space-x-4">
-            <label class="flex items-center space-x-2 cursor-pointer bg-slate-800 px-3 py-1.5 rounded-full text-sm border border-slate-700">
-                <input type="checkbox" id="demo-toggle" class="rounded text-blue-500 focus:ring-blue-500 bg-slate-700 border-slate-600" onchange="toggleDemoMode()">
-                <span class="text-slate-300 font-medium">Demo: +20 ETH</span>
-            </label>
-            <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm">SJ</div>
+        <div class="bg-green-100 text-green-800 px-4 py-2 rounded-lg border border-green-200 flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <span class="font-medium" id="wallet-status">Segregated Wallet</span>
         </div>
-    </nav>
+    </header>
 
-    <main class="flex-1 overflow-y-auto p-8">
-        <div class="max-w-7xl mx-auto space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Total Market Value</h3>
+            <p class="text-3xl font-bold">$1,452,890.00</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Cash Balance</h3>
+            <p class="text-3xl font-bold">$125,000.00</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+            <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Buying Power</h3>
+            <p class="text-3xl font-bold text-blue-600">$125,000.00</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-2 space-y-8">
             
-            <div class="flex justify-between items-end mb-8">
-                <div>
-                    <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Account 00001241</h1>
-                    <p class="text-slate-500 mt-1 font-medium">Anchorage Demo Firm — 2% per year</p>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2">General Information</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    <div><span class="block text-slate-500">Client</span><span class="font-medium">Acme Corp Family Office</span></div>
+                    <div><span class="block text-slate-500">Legal Entity</span><span class="font-medium">Acme Holdings LLC</span></div>
+                    <div><span class="block text-slate-500">Account Type</span><span class="font-medium">Institutional Custody</span></div>
+                    <div><span class="block text-slate-500">Model Name</span><span class="font-medium">Crypto Aggressive Yield</span></div>
+                    <div><span class="block text-slate-500">Open Date</span><span class="font-medium">Oct 12, 2024</span></div>
+                    <div><span class="block text-slate-500">Rep Code</span><span class="font-medium">REP-9482X</span></div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Market Value</div>
-                    <div class="text-2xl font-bold" id="market-value">$93,604.31</div>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Cash</div>
-                    <div class="text-2xl font-bold">$17,265.53</div>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Buying Power</div>
-                    <div class="text-2xl font-bold">$17,165.53</div>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Thirty Days</div>
-                    <div class="text-2xl font-bold text-green-600">+$1,519.42</div>
-                </div>
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                    <div class="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Total Gain/Loss</div>
-                    <div class="text-2xl font-bold text-red-600">-$13,170.52</div>
-                </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2">Positions</h2>
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-slate-500 text-sm border-b">
+                            <th class="pb-2">Asset</th>
+                            <th class="pb-2">Amount</th>
+                            <th class="pb-2">Value (USD)</th>
+                            <th class="pb-2">Allocation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-slate-50">
+                            <td class="py-3 font-medium flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-orange-400"></span><span>Bitcoin (BTC)</span></td>
+                            <td class="py-3">10.50</td>
+                            <td class="py-3">$703,500</td>
+                            <td class="py-3">53%</td>
+                        </tr>
+                        <tr class="border-b border-slate-50">
+                            <td class="py-3 font-medium flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span><span>Ethereum (ETH)</span></td>
+                            <td class="py-3"><span id="eth-balance">85.00</span></td>
+                            <td class="py-3">$297,500</td>
+                            <td class="py-3">22%</td>
+                        </tr>
+                        <tr class="border-b border-slate-50">
+                            <td class="py-3 font-medium flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-purple-500"></span><span>Solana (SOL)</span></td>
+                            <td class="py-3"><span id="sol-balance">1500.00</span></td>
+                            <td class="py-3">$252,000</td>
+                            <td class="py-3">19%</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 font-medium flex items-center space-x-2"><span class="w-2 h-2 rounded-full bg-green-500"></span><span>USD Cash</span></td>
+                            <td class="py-3">$125,000</td>
+                            <td class="py-3">$125,000</td>
+                            <td class="py-3">6%</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-8">
-                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                    <h2 class="font-semibold text-slate-800 text-lg">Assets</h2>
-                    <span class="text-sm font-medium text-slate-500">Total Assets: <span id="table-total">$93,604.31</span></span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-600">
-                        <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
-                            <tr>
-                                <th class="px-6 py-3">Asset</th>
-                                <th class="px-6 py-3 text-right">%</th>
-                                <th class="px-6 py-3 text-right">Quantity</th>
-                                <th class="px-6 py-3 text-right">Held (Staked)</th>
-                                <th class="px-6 py-3 text-right">Balance</th>
-                                <th class="px-6 py-3 text-right">Cost Basis</th>
-                                <th class="px-6 py-3 text-right">Gain/Loss</th>
-                                <th class="px-6 py-3 text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="assets-tbody" class="divide-y divide-slate-100">
-                            </tbody>
-                    </table>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2">Performance (Time Series)</h2>
+                <div class="h-64 w-full">
+                    <canvas id="performanceChart"></canvas>
                 </div>
             </div>
 
         </div>
-    </main>
 
-    <div id="wizard-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all translate-y-4" id="wizard-content">
-            
-            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-semibold text-lg" id="modal-title">Stake Asset</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition text-xl">&times;</button>
-            </div>
+        <div class="space-y-8">
+            <div class="bg-gradient-to-br from-slate-900 to-slate-800 p-6 rounded-xl shadow-lg text-white">
+                <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                    <h2 class="text-xl font-bold flex items-center space-x-2">
+                        <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <span>Staking Center</span>
+                    </h2>
+                    <span class="bg-indigo-500/20 text-indigo-300 text-xs px-2 py-1 rounded border border-indigo-500/30">Segregated Wallet Only</span>
+                </div>
 
-            <div id="step-1" class="p-6 space-y-6">
-                <div class="flex justify-between items-center bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <div class="space-y-6">
                     <div>
-                        <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">Available to Stake</div>
-                        <div class="font-bold text-slate-800 text-lg" id="selected-available">0.000000</div>
+                        <label class="block text-sm font-medium text-slate-300 mb-1">Select Asset to Stake</label>
+                        <select id="stake-asset" class="w-full bg-slate-800 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:border-indigo-500">
+                            <option value="ETH">Ethereum (ETH) - 3.8% APY</option>
+                            <option value="SOL">Solana (SOL) - 6.5% APY</option>
+                        </select>
                     </div>
-                    <div class="text-right">
-                        <div class="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">Asset</div>
-                        <div class="font-bold text-slate-800 text-lg" id="selected-ticker">ETH</div>
+                    
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <label class="font-medium text-slate-300">Amount</label>
+                            <span class="text-slate-400" id="min-requirement">Min: 32 ETH</span>
+                        </div>
+                        <input type="number" id="stake-amount" placeholder="Enter amount..." class="w-full bg-slate-800 border border-slate-600 rounded-lg py-2 px-3 text-white focus:outline-none focus:border-indigo-500">
+                        <p id="error-msg" class="text-red-400 text-xs mt-2 hidden"></p>
                     </div>
-                </div>
 
-                <div>
-                    <div class="flex justify-between items-end mb-2">
-                        <label class="block text-sm font-medium text-slate-700">Amount to Stake</label>
-                        <button onclick="setMax()" class="text-xs text-blue-600 font-medium hover:underline">Max Available</button>
-                    </div>
-                    <div class="relative">
-                        <input type="number" id="stake-amount" class="w-full border border-slate-300 rounded-lg p-3 pr-16 text-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="0.00">
-                    </div>
-                    <p class="text-sm mt-2 text-slate-500" id="amount-hint">Minimum 32 ETH required.</p>
-                </div>
-
-                <div class="pt-4 border-t border-slate-100 flex justify-end">
-                    <button onclick="goToReview()" id="btn-review" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>Review Request</button>
+                    <button onclick="submitStake()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-lg transition duration-200">
+                        Initiate Stake
+                    </button>
                 </div>
             </div>
 
-            <div id="step-2" class="p-10 flex flex-col items-center justify-center space-y-4 hidden">
-                <div class="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-                <h3 class="font-semibold text-lg text-slate-800">Broadcasting Request</h3>
-                <p class="text-sm text-slate-500 text-center">Allocating funds to staking contract...</p>
-            </div>
-
-            <div id="step-3" class="p-8 text-center space-y-4 hidden">
-                <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                </div>
-                <h3 class="font-semibold text-xl text-slate-800">Staking Initiated</h3>
-                <p class="text-sm text-slate-500 max-w-xs mx-auto">Your asset has been moved to <span class="font-semibold text-slate-700">Held Quantity</span> and is currently pending protocol activation.</p>
-                <div class="pt-6">
-                    <button onclick="finishStake()" class="w-full bg-slate-100 text-slate-800 px-6 py-2.5 rounded-lg font-medium hover:bg-slate-200 transition">Return to Account</button>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <h2 class="text-xl font-bold mb-4 border-b pb-2">My Staking Positions</h2>
+                
+                <div id="staking-list" class="space-y-4">
+                    <div class="p-4 border rounded-lg bg-slate-50">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="font-bold">Ethereum (ETH)</h4>
+                                <span class="text-xs text-slate-500">Started: Jan 10, 2026</span>
+                            </div>
+                            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-medium">Active</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-sm mt-3">
+                            <div><span class="text-slate-500 block">Staked</span> <span class="font-medium">64.00 ETH</span></div>
+                            <div><span class="text-slate-500 block">Yield Rate</span> <span class="font-medium text-indigo-600">3.8% APY</span></div>
+                            <div class="col-span-2 pt-2 border-t mt-2"><span class="text-slate-500">Rewards Earned:</span> <span class="font-bold text-green-600">+1.25 ETH</span></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -155,165 +159,127 @@
     </div>
 
     <script>
-        // Initial Data Model (Matching user input)
-        const formatCurrency = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
-        const formatNumber = (num, decimals = 6) => new Intl.NumberFormat('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(num);
+        // Mock State
+        let balances = {
+            ETH: 85.00,
+            SOL: 1500.00
+        };
 
-        let assets = [
-            { id: 'ETH', name: 'ETH', pct: '41.94%', qty: 18.364200, held: 0.000000, bal: 39254.29, cost: 41392.62, gl: -2138.33, minReq: 32, stakable: true },
-            { id: 'BTC', name: 'BTC', pct: '39.62%', qty: 0.544605, held: 0.000000, bal: 37084.49, cost: 48216.68, gl: -11132.19, minReq: null, stakable: false },
-            { id: 'SOL', name: 'SOL', pct: '5.20%', qty: 35.000000, held: 0.000000, bal: 4850.00, cost: 4000.00, gl: 850.00, minReq: 2, stakable: true }, // Added for immediate demo purposes
-            { id: 'USD', name: 'USD', pct: '18.45%', qty: 17265.525000, held: 100.000000, bal: 17265.53, cost: 17165.53, gl: 100.00, minReq: null, stakable: false }
-        ];
+        const minReqs = {
+            ETH: 32,
+            SOL: 2
+        };
 
-        let activeAssetId = null;
-        let isDemoMode = false;
+        const apyRates = {
+            ETH: "3.8%",
+            SOL: "6.5%"
+        };
 
-        // Render Table
-        function renderTable() {
-            const tbody = document.getElementById('assets-tbody');
-            tbody.innerHTML = '';
-            
-            let totalBal = 0;
+        // Update UI when dropdown changes
+        document.getElementById('stake-asset').addEventListener('change', function(e) {
+            const asset = e.target.value;
+            document.getElementById('min-requirement').innerText = `Min: ${minReqs[asset]} ${asset}`;
+        });
 
-            assets.forEach(a => {
-                totalBal += a.bal;
-                const availableQty = a.qty - a.held;
-                const isEligible = a.stakable && availableQty >= a.minReq;
-                const glClass = a.gl >= 0 ? 'text-green-600' : 'text-red-600';
-                
-                let actionHtml = '';
-                if (a.stakable) {
-                    if (isEligible) {
-                        actionHtml = `<button onclick="openModal('${a.id}')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-4 py-1.5 rounded-md font-medium text-xs hover:bg-indigo-100 transition w-full">Stake</button>`;
-                    } else {
-                        actionHtml = `
-                            <div class="tooltip relative inline-block w-full text-center">
-                                <button disabled class="bg-slate-100 text-slate-400 border border-slate-200 px-4 py-1.5 rounded-md font-medium text-xs cursor-not-allowed w-full">Stake</button>
-                                <span class="tooltip-text w-32 bg-slate-800 text-white text-xs rounded py-1 px-2 absolute z-10 bottom-full left-1/2 -ml-16 mb-2">Requires ${a.minReq} ${a.name}</span>
-                            </div>
-                        `;
-                    }
-                } else {
-                    actionHtml = `<span class="text-slate-300 text-xs italic">N/A</span>`;
-                }
+        // Handle Staking Logic
+        function submitStake() {
+            const asset = document.getElementById('stake-asset').value;
+            const amountInput = document.getElementById('stake-amount');
+            const amount = parseFloat(amountInput.value);
+            const errorMsg = document.getElementById('error-msg');
 
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition";
-                tr.innerHTML = `
-                    <td class="px-6 py-4 font-semibold text-slate-900">${a.name}</td>
-                    <td class="px-6 py-4 text-right">${a.pct}</td>
-                    <td class="px-6 py-4 text-right font-medium">${formatNumber(a.qty)}</td>
-                    <td class="px-6 py-4 text-right ${a.held > 0 ? 'text-indigo-600 font-semibold' : 'text-slate-400'}">${formatNumber(a.held)}</td>
-                    <td class="px-6 py-4 text-right">${formatCurrency(a.bal)}</td>
-                    <td class="px-6 py-4 text-right">${formatCurrency(a.cost)}</td>
-                    <td class="px-6 py-4 text-right ${glClass}">${formatCurrency(a.gl)}</td>
-                    <td class="px-6 py-4 text-center align-middle">${actionHtml}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('market-value').innerText = formatCurrency(totalBal);
-            document.getElementById('table-total').innerText = formatCurrency(totalBal);
-        }
-
-        // Demo Toggle Logic
-        function toggleDemoMode() {
-            isDemoMode = !isDemoMode;
-            const eth = assets.find(a => a.id === 'ETH');
-            if (isDemoMode) {
-                eth.qty += 20; // Pushes it over 32
-                eth.bal += 42000; // Fake value bump
-            } else {
-                eth.qty -= 20;
-                eth.bal -= 42000;
+            // Validation
+            if (isNaN(amount)) {
+                showError("Please enter a valid number.");
+                return;
             }
-            renderTable();
-        }
+            if (amount < minReqs[asset]) {
+                showError(`Minimum staking amount for ${asset} is ${minReqs[asset]}.`);
+                return;
+            }
+            if (amount > balances[asset]) {
+                showError(`Insufficient ${asset} balance. You have ${balances[asset]}.`);
+                return;
+            }
 
-        // Modal Logic
-        const amountInput = document.getElementById('stake-amount');
-        const btnReview = document.getElementById('btn-review');
-
-        function openModal(assetId) {
-            activeAssetId = assetId;
-            const asset = assets.find(a => a.id === assetId);
-            const available = asset.qty - asset.held;
-
-            document.getElementById('step-1').classList.remove('hidden');
-            document.getElementById('step-2').classList.add('hidden');
-            document.getElementById('step-3').classList.add('hidden');
-            
-            document.getElementById('modal-title').innerText = `Stake ${asset.name}`;
-            document.getElementById('selected-available').innerText = formatNumber(available);
-            document.getElementById('selected-ticker').innerText = asset.name;
-            document.getElementById('amount-hint').innerText = `Minimum ${asset.minReq} ${asset.name} required.`;
-            
+            // Success - Deduct balance & clear error
+            errorMsg.classList.add('hidden');
+            balances[asset] -= amount;
+            document.getElementById(`${asset.toLowerCase()}-balance`).innerText = balances[asset].toFixed(2);
             amountInput.value = '';
-            btnReview.disabled = true;
 
-            const modal = document.getElementById('wizard-modal');
-            const modalContent = document.getElementById('wizard-content');
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                modal.classList.remove('opacity-0');
-                modalContent.classList.remove('translate-y-4');
-            }, 10);
+            // Add to Staking List
+            addStakingCard(asset, amount);
         }
 
-        function closeModal() {
-            const modal = document.getElementById('wizard-modal');
-            const modalContent = document.getElementById('wizard-content');
-            modal.classList.add('opacity-0');
-            modalContent.classList.add('translate-y-4');
-            setTimeout(() => modal.classList.add('hidden'), 300);
+        function showError(msg) {
+            const errorMsg = document.getElementById('error-msg');
+            errorMsg.innerText = msg;
+            errorMsg.classList.remove('hidden');
         }
 
-        function setMax() {
-            const asset = assets.find(a => a.id === activeAssetId);
-            const available = asset.qty - asset.held;
-            amountInput.value = available;
-            validateInput();
-        }
-
-        function validateInput() {
-            const asset = assets.find(a => a.id === activeAssetId);
-            const available = asset.qty - asset.held;
-            const val = parseFloat(amountInput.value);
+        function addStakingCard(asset, amount) {
+            const list = document.getElementById('staking-list');
+            const cardId = 'stake-' + Date.now();
             
-            if (val >= asset.minReq && val <= available) {
-                btnReview.disabled = false;
-            } else {
-                btnReview.disabled = true;
-            }
-        }
+            const cardHTML = `
+            <div id="${cardId}" class="p-4 border rounded-lg bg-blue-50 border-blue-100 transition-all duration-500">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <h4 class="font-bold">${asset === 'ETH' ? 'Ethereum (ETH)' : 'Solana (SOL)'}</h4>
+                        <span class="text-xs text-slate-500">Started: Just now</span>
+                    </div>
+                    <span id="status-${cardId}" class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-medium animate-pulse">In Progress (Bonding)</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-sm mt-3">
+                    <div><span class="text-slate-500 block">Staked</span> <span class="font-medium">${amount.toFixed(2)} ${asset}</span></div>
+                    <div><span class="text-slate-500 block">Yield Rate</span> <span class="font-medium text-indigo-600">${apyRates[asset]} APY</span></div>
+                    <div class="col-span-2 pt-2 border-t mt-2"><span class="text-slate-500">Rewards Earned:</span> <span class="font-bold text-slate-400">0.00 ${asset}</span></div>
+                </div>
+            </div>`;
+            
+            // Insert at the top
+            list.insertAdjacentHTML('afterbegin', cardHTML);
 
-        amountInput.addEventListener('input', validateInput);
-
-        function goToReview() {
-            document.getElementById('step-1').classList.add('hidden');
-            document.getElementById('step-2').classList.remove('hidden');
-
-            // Simulate API interaction
+            // Simulate the bonding process finishing after 4 seconds
             setTimeout(() => {
-                document.getElementById('step-2').classList.add('hidden');
-                document.getElementById('step-3').classList.remove('hidden');
+                const card = document.getElementById(cardId);
+                const status = document.getElementById(`status-${cardId}`);
                 
-                // Update underlying data model
-                const asset = assets.find(a => a.id === activeAssetId);
-                const stakedAmt = parseFloat(amountInput.value);
-                asset.held += stakedAmt; // Move from Available to Held (Staked)
+                card.classList.remove('bg-blue-50', 'border-blue-100');
+                card.classList.add('bg-slate-50', 'border-slate-200');
                 
-            }, 1800);
+                status.classList.remove('bg-blue-100', 'text-blue-800', 'animate-pulse');
+                status.classList.add('bg-green-100', 'text-green-800');
+                status.innerText = 'Active';
+            }, 4000);
         }
 
-        function finishStake() {
-            closeModal();
-            renderTable(); // Re-render table to show updated "Held" column
-        }
-
-        // Init
-        renderTable();
+        // Initialize Chart.js for the Time Series Mock
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Portfolio Value (USD)',
+                    data: [1100000, 1150000, 1080000, 1250000, 1380000, 1452890],
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: false, ticks: { callback: function(value) { return '$' + value/1000 + 'k'; } } }
+                }
+            }
+        });
     </script>
 </body>
 </html>
