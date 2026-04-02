@@ -46,7 +46,7 @@
         tr:hover { background-color: #F8FAFC; }
 
         /* Right Panel - PowerTools */
-        .powertools-panel { width: 600px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; }
+        .powertools-panel { width: 650px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; }
         .tabs { display: flex; border-bottom: 1px solid var(--border); background: #F8FAFC; }
         .tab { padding: 12px 24px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-right: 1px solid var(--border); }
         .tab.active { background: var(--surface); color: var(--primary); border-bottom: 2px solid var(--primary); }
@@ -70,6 +70,9 @@
         .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
         .form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none; }
         .form-control:focus { border-color: var(--primary); }
+        .form-control:disabled { background-color: #F3F4F6; color: var(--text-muted); font-weight: 600;}
+        
+        .input-group { display: flex; gap: 8px; }
         
         .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
         .status-success { background: #D1FAE5; color: #065F46; }
@@ -127,21 +130,22 @@
     <script>
         // Database State
         const initialState = {
-            '1239': { id: '1239', name: 'Rao, Sidsel', marketValue: '$56,287.37', assets: { ETH: { available: 100, staked: 0 }, SOL: { available: 5, staked: 0 } } },
+            '1239': { id: '1239', name: 'Rao, Sidsel', marketValue: '$56,287.37', assets: { ETH: { available: 100, staked: 35 }, SOL: { available: 5, staked: 0 } } },
             '1240': { id: '1240', name: 'Lucassen, Kennet', marketValue: '$90,263.37', assets: { ETH: { available: 10, staked: 40 }, SOL: { available: 100, staked: 0 } } },
-            '1241': { id: '1241', name: 'Power, Moise', marketValue: '$90,320.18', assets: { ETH: { available: 20, staked: 0 } } }, // No SOL
-            '1242': { id: '1242', name: 'Aguilar, Clemence', marketValue: '$56,448.14', assets: { ETH: { available: 250, staked: 100 } } }
+            '1241': { id: '1241', name: 'Power, Moise', marketValue: '$90,320.18', assets: { ETH: { available: 20, staked: 0 } } }, 
+            '1242': { id: '1242', name: 'Aguilar, Clemence', marketValue: '$56,448.14', assets: { ETH: { available: 250, staked: 100 }, SOL: { available: 0, staked: 5 } } }
         };
 
         let db = JSON.parse(JSON.stringify(initialState));
-        let selectedAccountIds = new Set(['1239', '1240', '1241']); // Pre-select a few for demo
+        let selectedAccountIds = new Set(['1239', '1240', '1241', '1242']); 
         
         // Flow State Management
-        let currentView = 'default'; // 'default', 'setup', 'preview'
-        let flowAction = ''; // 'stake' or 'unstake'
+        let currentView = 'default'; 
+        let flowAction = ''; 
         let flowAsset = 'ETH';
         let flowAmount = 0;
-        let validAccountsCache = []; // Stores accounts that passed validation for confirm step
+        let isMaxMode = false;
+        let validAccountsCache = []; 
 
         // --- Core Rendering Logic ---
         function renderAccountList() {
@@ -173,7 +177,7 @@
         function toggleAccount(id, isChecked) {
             if (isChecked) selectedAccountIds.add(id);
             else selectedAccountIds.delete(id);
-            if(currentView !== 'default') cancelFlow(); // Reset flow if selection changes
+            if(currentView !== 'default') cancelFlow(); 
             else renderRightPanel();
             renderAccountList();
         }
@@ -218,7 +222,7 @@
                 const acc = db[id];
                 let rows = '';
                 ['ETH', 'SOL'].forEach(ticker => {
-                    if(acc.assets[ticker]) {
+                    if(acc.assets[ticker] && (acc.assets[ticker].available > 0 || acc.assets[ticker].staked > 0)) {
                         rows += `<tr>
                             <td><strong>${ticker}</strong></td>
                             <td>${acc.assets[ticker].available.toFixed(2)}</td>
@@ -244,11 +248,25 @@
         function startFlow(action) {
             currentView = 'setup';
             flowAction = action;
+            isMaxMode = false;
             renderRightPanel();
+        }
+
+        function toggleMaxMode() {
+            isMaxMode = !isMaxMode;
+            const input = document.getElementById('amountInput');
+            if (isMaxMode) {
+                input.value = 'MAX (Auto-Calculated per Account)';
+                input.disabled = true;
+            } else {
+                input.value = '';
+                input.disabled = false;
+            }
         }
 
         function renderSetupView(container) {
             const title = flowAction === 'stake' ? 'Setup Bulk Stake' : 'Setup Bulk Unstake';
+            const actionText = flowAction === 'stake' ? 'Stake Max' : 'Unstake Max';
             
             container.innerHTML = `
                 <div class="flow-container">
@@ -261,8 +279,14 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Amount (Applied to EACH selected account)</label>
-                        <input type="number" id="amountInput" class="form-control" placeholder="0.00" step="0.01">
+                        <label>Amount</label>
+                        <div class="input-group">
+                            <input type="text" id="amountInput" class="form-control" placeholder="0.00">
+                            <button class="btn btn-secondary" onclick="toggleMaxMode()">${actionText}</button>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+                            ${flowAction === 'unstake' ? 'Note: Accounts must maintain the minimum staked balance (32 ETH or 2 SOL).' : 'Amount will be applied to all selected accounts.'}
+                        </p>
                     </div>
                     <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
                         <button class="btn btn-secondary" onclick="cancelFlow()">Cancel</button>
@@ -274,12 +298,14 @@
 
         // --- View 3: Preview ---
         function goToPreview() {
-            const val = parseFloat(document.getElementById('amountInput').value);
-            if (isNaN(val) || val <= 0) {
-                alert('Please enter a valid amount.');
-                return;
+            if (!isMaxMode) {
+                const val = parseFloat(document.getElementById('amountInput').value);
+                if (isNaN(val) || val <= 0) {
+                    alert('Please enter a valid amount.');
+                    return;
+                }
+                flowAmount = val;
             }
-            flowAmount = val;
             flowAsset = document.getElementById('assetSelect').value;
             currentView = 'preview';
             renderRightPanel();
@@ -287,9 +313,11 @@
 
         function renderPreviewView(container) {
             const title = flowAction === 'stake' ? 'Preview Bulk Stake' : 'Preview Bulk Unstake';
-            const resultingColHeader = flowAction === 'stake' ? 'Available After' : 'Remaining Staked';
-            validAccountsCache = []; // Reset valid list
+            const resultingColHeader = flowAction === 'stake' ? 'Total Staked After' : 'Remaining Staked';
+            validAccountsCache = []; 
             let rowsHtml = '';
+
+            const minReq = flowAsset === 'ETH' ? 32 : 2;
 
             selectedAccountIds.forEach(id => {
                 const acc = db[id];
@@ -298,42 +326,54 @@
                 let statusMsg = 'Valid';
                 let isValid = true;
                 let resultingBalance = 0;
+                let amtToProcess = 0;
 
-                // Validation Logic
                 if (!asset) {
                     isValid = false;
                     statusMsg = 'Asset not held';
-                    resultingBalance = 0;
                 } else if (flowAction === 'stake') {
-                    if (flowAmount > asset.available) {
+                    // STAKING LOGIC
+                    amtToProcess = isMaxMode ? asset.available : flowAmount;
+                    
+                    if (amtToProcess <= 0) {
                         isValid = false;
-                        statusMsg = `Not enough available (${asset.available})`;
-                    } else if (flowAsset === 'ETH' && flowAmount < 32) {
+                        statusMsg = 'No available balance';
+                    } else if (amtToProcess > asset.available) {
                         isValid = false;
-                        statusMsg = 'Min 32 ETH required';
-                    } else if (flowAsset === 'SOL' && flowAmount < 2) {
+                        statusMsg = `Not enough available (${asset.available.toFixed(2)})`;
+                    } else if (asset.staked + amtToProcess < minReq) {
                         isValid = false;
-                        statusMsg = 'Min 2 SOL required';
+                        statusMsg = `Min ${minReq} ${flowAsset} required to stake`;
                     } else {
-                        resultingBalance = asset.available - flowAmount;
+                        resultingBalance = asset.staked + amtToProcess;
                     }
-                } else { // Unstake
-                    if (flowAmount > asset.staked) {
+                } else { 
+                    // UNSTAKING LOGIC
+                    amtToProcess = isMaxMode ? Math.max(0, asset.staked - minReq) : flowAmount;
+
+                    if (amtToProcess <= 0) {
                         isValid = false;
-                        statusMsg = `Exceeds staked (${asset.staked})`;
+                        statusMsg = `Must keep ${minReq} ${flowAsset} staked`;
+                    } else if (amtToProcess > asset.staked) {
+                        isValid = false;
+                        statusMsg = `Exceeds staked (${asset.staked.toFixed(2)})`;
                     } else {
-                        resultingBalance = asset.staked - flowAmount;
+                        resultingBalance = asset.staked - amtToProcess;
+                        if (resultingBalance < minReq) {
+                            isValid = false;
+                            statusMsg = `Must leave ${minReq} ${flowAsset} staked`;
+                        }
                     }
                 }
 
-                if (isValid) validAccountsCache.push({ id, assetObj: asset });
+                if (isValid) validAccountsCache.push({ id, assetObj: asset, amount: amtToProcess });
 
                 const badgeClass = isValid ? 'status-success' : 'status-error';
                 
                 rowsHtml += `
                     <tr>
                         <td>${acc.name}</td>
-                        <td>${flowAmount} ${flowAsset}</td>
+                        <td style="${isValid ? 'font-weight:600;' : 'color:var(--text-muted);'}">${amtToProcess > 0 ? amtToProcess.toFixed(2) : '-'} ${flowAsset}</td>
                         <td>${isValid ? resultingBalance.toFixed(2) : '-'}</td>
                         <td><span class="status-badge ${badgeClass}">${statusMsg}</span></td>
                     </tr>
@@ -352,7 +392,7 @@
                         <thead style="background: #F8FAFC;">
                             <tr>
                                 <th>Account</th>
-                                <th>${flowAction === 'stake' ? 'Staking' : 'Unstaking'}</th>
+                                <th>${flowAction === 'stake' ? 'Staking Amount' : 'Unstaking Amount'}</th>
                                 <th>${resultingColHeader}</th>
                                 <th>Status</th>
                             </tr>
@@ -371,22 +411,18 @@
 
         // --- Action Execution ---
         function confirmFlow() {
-            // Apply math only to valid accounts
             validAccountsCache.forEach(item => {
                 if (flowAction === 'stake') {
-                    item.assetObj.available -= flowAmount;
-                    item.assetObj.staked += flowAmount;
+                    item.assetObj.available -= item.amount;
+                    item.assetObj.staked += item.amount;
                 } else {
-                    item.assetObj.staked -= flowAmount;
-                    item.assetObj.available += flowAmount;
+                    item.assetObj.staked -= item.amount;
+                    item.assetObj.available += item.amount;
                 }
             });
 
-            // Return to default
             currentView = 'default';
             renderRightPanel();
-            
-            // Re-render left panel in case any market value/summary needed updates (omitted for brevity)
         }
 
         function cancelFlow() {
@@ -396,7 +432,7 @@
 
         function resetDemo() {
             db = JSON.parse(JSON.stringify(initialState));
-            selectedAccountIds = new Set(['1239', '1240', '1241']);
+            selectedAccountIds = new Set(['1239', '1240', '1241', '1242']);
             currentView = 'default';
             renderAccountList();
             renderRightPanel();
