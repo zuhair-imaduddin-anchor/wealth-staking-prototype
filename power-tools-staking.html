@@ -1,0 +1,560 @@
+Got it! Since you are testing this out locally, a standalone HTML file is exactly what you need. 
+
+I have combined the layout from your screenshot with the exact business logic (like the 32 ETH and 2 SOL minimums) into a single, fully functional HTML file. 
+
+Here is the complete code. You can copy this, save it as `power-tools-prototype.html`, and double-click it to open it right in your browser.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account PowerTools - Staking Prototype</title>
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --bg-main: #F4F5F7;
+            --surface: #FFFFFF;
+            --border: #E5E7EB;
+            --primary: #4F46E5;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --success: #10B981;
+            --danger: #EF4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: var(--sidebar-bg);
+            color: white;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-item {
+            padding: 16px 24px;
+            color: #9CA3AF;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .sidebar-item.active {
+            background-color: white;
+            color: var(--text-main);
+            font-weight: 600;
+            border-radius: 8px 0 0 8px;
+            margin-left: 12px;
+        }
+
+        /* Main Content */
+        .main-layout {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: var(--surface);
+            padding: 20px 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #0F172A;
+        }
+
+        .content-area {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            padding: 24px;
+            gap: 24px;
+        }
+
+        /* Left Panel - Accounts */
+        .account-list-panel {
+            flex: 1;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: #F8FAFC;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover {
+            background-color: #F8FAFC;
+        }
+
+        /* Right Panel - PowerTools */
+        .powertools-panel {
+            width: 550px;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: #F8FAFC;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-right: 1px solid var(--border);
+        }
+
+        .tab.active {
+            background: var(--surface);
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .tab.hidden {
+            display: none;
+        }
+
+        .tab-content {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            margin-top: 40px;
+        }
+
+        /* Staking UI */
+        .account-staking-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .account-staking-header {
+            background: #F8FAFC;
+            padding: 12px 16px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mini-table th, .mini-table td {
+            padding: 10px 16px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-left: 4px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: white; border-color: var(--border); color: var(--text-main); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 8px;
+            width: 360px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal h3 { margin-top: 0; margin-bottom: 4px; }
+        .modal-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; margin-top: 0; }
+
+        .input-wrapper {
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .input-wrapper span {
+            padding: 10px 12px;
+            background: #F8FAFC;
+            border-left: 1px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .helper-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 12px;
+            margin-bottom: 16px;
+            display: none;
+            background: #FEF2F2;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #FCA5A5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-item">Dashboard</div>
+        <div class="sidebar-item">Accounts</div>
+        <div class="sidebar-item active">Account PowerTools</div>
+        <div class="sidebar-item">Transactions & Orders</div>
+    </div>
+
+    <div class="main-layout">
+        <div class="header">
+            <h1>Account PowerTools</h1>
+            <button class="btn btn-outline" onclick="resetDemo()">⟳ Reset Data</button>
+        </div>
+
+        <div class="content-area">
+            <div class="account-list-panel">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" disabled></th>
+                            <th>Account</th>
+                            <th>Name</th>
+                            <th>Market Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountTableBody">
+                        </tbody>
+                </table>
+            </div>
+
+            <div class="powertools-panel">
+                <div class="tabs">
+                    <div class="tab">Accounts</div>
+                    <div class="tab">Models</div>
+                    <div class="tab" id="stakingTabLabel">Staking</div>
+                </div>
+                
+                <div class="tab-content" id="rightPanelContent">
+                    <div class="empty-state">No Accounts Selected - No Preview Available</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="stakingModal">
+        <div class="modal">
+            <h3 id="modalTitle">Stake Asset</h3>
+            <p class="modal-subtitle" id="modalAccountName">Account Name</p>
+            
+            <div class="input-wrapper">
+                <input type="number" id="amountInput" placeholder="0.00" step="0.01">
+                <span id="modalTicker">ETH</span>
+            </div>
+            
+            <div class="helper-text">
+                <span id="availableText">Available: 0.00</span>
+                <a href="#" style="color: var(--primary); text-decoration: none; font-weight: 600;" onclick="setMax(event)">Max</a>
+            </div>
+
+            <div class="error-msg" id="errorMsg"></div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px;">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmAction()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initial Database State
+        const initialState = {
+            '1239': {
+                id: '1239', name: 'Rao, Sidsel', marketValue: '$56,287.37',
+                assets: {
+                    ETH: { total: 100, available: 100, staked: 0, apy: '3.5%', rewards: 0 },
+                    SOL: { total: 5, available: 5, staked: 0, apy: '6.8%', rewards: 0 },
+                    BTC: { total: 2, available: 2, staked: 0, apy: '-', rewards: 0 } // Ignored in staking
+                }
+            },
+            '1240': {
+                id: '1240', name: 'Lucassen, Kennet', marketValue: '$90,263.37',
+                assets: {
+                    ETH: { total: 50, available: 10, staked: 40, apy: '3.5%', rewards: 1.2 },
+                    SOL: { total: 100, available: 100, staked: 0, apy: '6.8%', rewards: 0 }
+                }
+            },
+            '1241': {
+                id: '1241', name: 'Power, Moise', marketValue: '$90,320.18',
+                assets: {
+                    ETH: { total: 20, available: 20, staked: 0, apy: '3.5%', rewards: 0 }
+                }
+            }
+        };
+
+        let db = JSON.parse(JSON.stringify(initialState));
+        let selectedAccountIds = new Set();
+        let modalState = { accountId: null, action: null, ticker: null };
+
+        // 1. Render Left Pane (Accounts)
+        function renderAccountList() {
+            const tbody = document.getElementById('accountTableBody');
+            tbody.innerHTML = '';
+
+            Object.values(db).forEach(acc => {
+                const tr = document.createElement('tr');
+                const isChecked = selectedAccountIds.has(acc.id) ? 'checked' : '';
+                tr.innerHTML = `
+                    <td><input type="checkbox" ${isChecked} onchange="toggleAccount('${acc.id}', this.checked)"></td>
+                    <td>${acc.id}</td>
+                    <td>${acc.name}</td>
+                    <td>${acc.marketValue}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 2. Handle Checkbox
+        function toggleAccount(id, isChecked) {
+            if (isChecked) {
+                selectedAccountIds.add(id);
+            } else {
+                selectedAccountIds.delete(id);
+            }
+            updateRightPanel();
+        }
+
+        // 3. Render Right Pane
+        function updateRightPanel() {
+            const tabLabel = document.getElementById('stakingTabLabel');
+            const content = document.getElementById('rightPanelContent');
+
+            if (selectedAccountIds.size === 0) {
+                tabLabel.classList.remove('active');
+                tabLabel.classList.add('hidden');
+                content.innerHTML = `<div class="empty-state">No Accounts Selected - No Preview Available</div>`;
+                return;
+            }
+
+            // Show tab
+            tabLabel.classList.remove('hidden');
+            tabLabel.classList.add('active');
+            content.innerHTML = ''; 
+
+            selectedAccountIds.forEach(id => {
+                const acc = db[id];
+                const card = document.createElement('div');
+                card.className = 'account-staking-card';
+                
+                let rowsHtml = '';
+                // Only loop over stakable assets
+                ['ETH', 'SOL'].forEach(ticker => {
+                    const asset = acc.assets[ticker];
+                    if (asset && asset.total > 0) {
+                        const disableStake = asset.available <= 0 ? 'disabled' : '';
+                        const disableUnstake = asset.staked <= 0 ? 'disabled' : '';
+                        
+                        rowsHtml += `
+                            <tr>
+                                <td><strong>${ticker}</strong></td>
+                                <td>${asset.total.toFixed(2)}</td>
+                                <td>${asset.staked.toFixed(2)}</td>
+                                <td>${asset.rewards.toFixed(2)}</td>
+                                <td style="color: var(--success); font-weight:500;">${asset.apy}</td>
+                                <td style="text-align: right;">
+                                    <button class="btn btn-primary" ${disableStake} onclick="openModal('${id}', 'stake', '${ticker}')">Stake</button>
+                                    <button class="btn btn-secondary" ${disableUnstake} onclick="openModal('${id}', 'unstake', '${ticker}')">Unstake</button>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                if (!rowsHtml) {
+                    rowsHtml = `<tr><td colspan="6" style="text-align:center; color: #6B7280; padding: 20px;">No stakable assets available in this account.</td></tr>`;
+                }
+
+                card.innerHTML = `
+                    <div class="account-staking-header">
+                        ${acc.name} (${acc.id})
+                    </div>
+                    <table class="mini-table">
+                        <thead>
+                            <tr>
+                                <th>Asset</th>
+                                <th>Total</th>
+                                <th>Staked</th>
+                                <th>Earned</th>
+                                <th>Yield</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                `;
+                content.appendChild(card);
+            });
+        }
+
+        // 4. Modal Interactions
+        function openModal(accountId, action, ticker) {
+            modalState = { accountId, action, ticker };
+            const acc = db[accountId];
+            const asset = acc.assets[ticker];
+            const max = action === 'stake' ? asset.available : asset.staked;
+            
+            document.getElementById('modalTitle').innerText = action === 'stake' ? `Stake ${ticker}` : `Unstake ${ticker}`;
+            document.getElementById('modalAccountName').innerText = `Account: ${acc.name} (${acc.id})`;
+            document.getElementById('modalTicker').innerText = ticker;
+            document.getElementById('availableText').innerText = `Available to ${action}: ${max.toFixed(2)} ${ticker}`;
+            
+            document.getElementById('amountInput').value = '';
+            document.getElementById('errorMsg').style.display = 'none';
+            document.getElementById('stakingModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('stakingModal').style.display = 'none';
+        }
+
+        function setMax(e) {
+            e.preventDefault();
+            const asset = db[modalState.accountId].assets[modalState.ticker];
+            const max = modalState.action === 'stake' ? asset.available : asset.staked;
+            document.getElementById('amountInput').value = max;
+        }
+
+        function confirmAction() {
+            const amount = parseFloat(document.getElementById('amountInput').value);
+            const { accountId, action, ticker } = modalState;
+            const asset = db[accountId].assets[ticker];
+            const max = action === 'stake' ? asset.available : asset.staked;
+            const errorEl = document.getElementById('errorMsg');
+
+            errorEl.style.display = 'none';
+
+            if (isNaN(amount) || amount <= 0) {
+                showError('Please enter a valid amount greater than 0.'); return;
+            }
+            if (amount > max) {
+                showError(`Amount exceeds available balance (${max.toFixed(2)}).`); return;
+            }
+
+            // Minimums validation (Only applies when staking, not unstaking)
+            if (action === 'stake') {
+                if (ticker === 'ETH' && amount < 32) {
+                    showError('Minimum stake for Ethereum is 32 ETH.'); return;
+                }
+                if (ticker === 'SOL' && amount < 2) {
+                    showError('Minimum stake for Solana is 2 SOL.'); return;
+                }
+            }
+
+            // Execute Transaction
+            if (action === 'stake') {
+                asset.available -= amount;
+                asset.staked += amount;
+            } else {
+                asset.staked -= amount;
+                asset.available += amount;
+            }
+
+            closeModal();
+            updateRightPanel(); // Refresh UI
+        }
+
+        function showError(msg) {
+            const errorEl = document.getElementById('errorMsg');
+            errorEl.innerText = msg;
+            errorEl.style.display = 'block';
+        }
+
+        function resetDemo() {
+            db = JSON.parse(JSON.stringify(initialState));
+            selectedAccountIds.clear();
+            renderAccountList();
+            updateRightPanel();
+        }
+
+        // Initialize App
+        renderAccountList();
+    </script>
+</body>
+</html>
+```
