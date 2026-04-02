@@ -1,322 +1,537 @@
-<template>
-  <div class="staking-panel">
-    <div v-if="!accounts || accounts.length === 0" class="empty-state">
-      No Accounts Selected - No Preview Available
-    </div>
-
-    <div v-else class="staking-content">
-      <div 
-        v-for="account in accounts" 
-        :key="account.id" 
-        class="account-staking-card"
-      >
-        <div class="account-staking-header">
-          <span>{{ account.name }} ({{ account.id }})</span>
-        </div>
-        
-        <table class="mini-table">
-          <thead>
-            <tr>
-              <th>Asset</th>
-              <th>Total</th>
-              <th>Staked</th>
-              <th>Earned</th>
-              <th>Yield</th>
-              <th style="text-align: right;">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(asset, ticker) in getStakableAssets(account)" :key="ticker">
-              <td><strong>{{ ticker }}</strong></td>
-              <td>{{ asset.total.toFixed(2) }}</td>
-              <td>{{ asset.staked.toFixed(2) }}</td>
-              <td>{{ asset.rewards.toFixed(2) }}</td>
-              <td class="text-success">{{ asset.apy }}</td>
-              <td style="text-align: right;">
-                <button 
-                  class="btn btn-primary" 
-                  :disabled="asset.available <= 0"
-                  @click="openModal(account, 'stake', ticker)"
-                >
-                  Stake
-                </button>
-                <button 
-                  class="btn btn-secondary" 
-                  :disabled="asset.staked <= 0"
-                  @click="openModal(account, 'unstake', ticker)"
-                >
-                  Unstake
-                </button>
-              </td>
-            </tr>
-            <tr v-if="Object.keys(getStakableAssets(account)).length === 0">
-              <td colspan="6" class="text-muted text-center">No stakable assets available.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div v-if="modal.isOpen" class="modal-overlay" @click.self="closeModal">
-      <div class="modal">
-        <h3>{{ modal.action === 'stake' ? 'Stake' : 'Unstake' }} {{ modal.ticker }}</h3>
-        <p class="modal-subtitle">Account: {{ modal.account.name }} ({{ modal.account.id }})</p>
-        
-        <div class="input-wrapper">
-          <input 
-            type="number" 
-            v-model.number="modal.amount" 
-            placeholder="0.00" 
-            step="0.01"
-          >
-          <span>{{ modal.ticker }}</span>
-        </div>
-        
-        <div class="helper-text">
-          <span>Available to {{ modal.action }}: {{ maxAmount.toFixed(2) }} {{ modal.ticker }}</span>
-          <a href="#" @click.prevent="setMax">Max</a>
-        </div>
-
-        <div v-if="modal.error" class="error-msg">
-          {{ modal.error }}
-        </div>
-
-        <div class="modal-actions">
-          <button class="btn btn-secondary" @click="closeModal">Cancel</button>
-          <button class="btn btn-primary" @click="confirmAction">Confirm</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script>
-export default {
-  name: "StakingPanel",
-  props: {
-    // Passed down from SMADetails based on the left-pane selection
-    accounts: {
-      type: Array,
-      default: () => []
-    }
-  },
-  data() {
-    return {
-      modal: {
-        isOpen: false,
-        account: null,
-        action: null, // 'stake' or 'unstake'
-        ticker: null,
-        amount: null,
-        error: null
-      }
-    };
-  },
-  computed: {
-    maxAmount() {
-      if (!this.modal.account || !this.modal.ticker) return 0;
-      const asset = this.modal.account.assets[this.modal.ticker];
-      return this.modal.action === 'stake' ? asset.available : asset.staked;
-    }
-  },
-  methods: {
-    getStakableAssets(account) {
-      // Helper to strip out non-stakable assets (like BTC) and 0 balances
-      const allowed = ['ETH', 'SOL'];
-      const stakable = {};
-      
-      if (account.assets) {
-        allowed.forEach(ticker => {
-          if (account.assets[ticker] && account.assets[ticker].total > 0) {
-            stakable[ticker] = account.assets[ticker];
-          }
-        });
-      }
-      return stakable;
-    },
-    openModal(account, action, ticker) {
-      this.modal = {
-        isOpen: true,
-        account,
-        action,
-        ticker,
-        amount: null,
-        error: null
-      };
-    },
-    closeModal() {
-      this.modal.isOpen = false;
-      this.modal.error = null;
-    },
-    setMax() {
-      this.modal.amount = this.maxAmount;
-    },
-    confirmAction() {
-      this.modal.error = null;
-      const { amount, action, ticker } = this.modal;
-
-      if (!amount || amount <= 0) {
-        this.modal.error = "Please enter a valid amount.";
-        return;
-      }
-
-      if (amount > this.maxAmount) {
-        this.modal.error = `Amount exceeds available balance (${this.maxAmount}).`;
-        return;
-      }
-
-      // Business Logic Rules
-      if (action === 'stake') {
-        if (ticker === 'ETH' && amount < 32) {
-          this.modal.error = "Minimum stake for Ethereum is 32 ETH.";
-          return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account PowerTools - Staking Prototype</title>
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --bg-main: #F4F5F7;
+            --surface: #FFFFFF;
+            --border: #E5E7EB;
+            --primary: #4F46E5;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --success: #10B981;
+            --danger: #EF4444;
         }
-        if (ticker === 'SOL' && amount < 2) {
-          this.modal.error = "Minimum stake for Solana is 2 SOL.";
-          return;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-main);
+            color: var(--text-main);
         }
-      }
 
-      // Emitting the event up to your Vuex store or API layer
-      // In production, you don't mutate the prop directly. 
-      // You emit an action so your backend/state manager handles it.
-      this.$emit('submit-staking-action', {
-        accountId: this.modal.account.id,
-        action: this.modal.action,
-        ticker: this.modal.ticker,
-        amount: this.modal.amount
-      });
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: var(--sidebar-bg);
+            color: white;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+        }
 
-      this.closeModal();
-    }
-  }
-};
-</script>
+        .sidebar-item {
+            padding: 16px 24px;
+            color: #9CA3AF;
+            font-size: 14px;
+            cursor: pointer;
+        }
 
-<style scoped>
-/* Scoped styles ensure this doesn't break the rest of your app */
-.empty-state {
-  text-align: center;
-  color: #6B7280;
-  margin-top: 40px;
-}
+        .sidebar-item.active {
+            background-color: white;
+            color: var(--text-main);
+            font-weight: 600;
+            border-radius: 8px 0 0 8px;
+            margin-left: 12px;
+        }
 
-.account-staking-card {
-  border: 1px solid #E5E7EB;
-  border-radius: 8px;
-  margin-bottom: 24px;
-  background: #FFFFFF;
-}
+        /* Main Content */
+        .main-layout {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
-.account-staking-header {
-  background: #F8FAFC;
-  padding: 12px 16px;
-  font-weight: 600;
-  border-bottom: 1px solid #E5E7EB;
-}
+        .header {
+            background-color: var(--surface);
+            padding: 20px 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-.mini-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  font-size: 13px;
-}
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #0F172A;
+        }
 
-.mini-table th, .mini-table td {
-  padding: 12px 16px;
-  border-bottom: 1px solid #E5E7EB;
-}
+        .content-area {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            padding: 24px;
+            gap: 24px;
+        }
 
-.btn {
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  border: 1px solid transparent;
-  margin-left: 8px;
-}
+        /* Left Panel - Accounts */
+        .account-list-panel {
+            flex: 1;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow-y: auto;
+        }
 
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
 
-.btn-primary {
-  background: #4F46E5;
-  color: white;
-}
+        th {
+            background-color: #F8FAFC;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
 
-.btn-secondary {
-  background: white;
-  border-color: #E5E7EB;
-  color: #111827;
-}
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
 
-.text-success { color: #10B981; }
-.text-muted { color: #6B7280; }
-.text-center { text-align: center; }
+        tr:hover {
+            background-color: #F8FAFC;
+        }
 
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
+        /* Right Panel - PowerTools */
+        .powertools-panel {
+            width: 550px;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
 
-.modal {
-  background: #FFFFFF;
-  padding: 24px;
-  border-radius: 8px;
-  width: 360px;
-}
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: #F8FAFC;
+        }
 
-.modal h3 { margin: 0 0 4px 0; }
-.modal-subtitle { font-size: 13px; color: #6B7280; margin-bottom: 16px; }
+        .tab {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-right: 1px solid var(--border);
+        }
 
-.input-wrapper {
-  display: flex;
-  border: 1px solid #E5E7EB;
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
+        .tab.active {
+            background: var(--surface);
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
 
-.input-wrapper input {
-  flex: 1;
-  padding: 8px 12px;
-  border: none;
-  outline: none;
-}
+        .tab-content {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
 
-.input-wrapper span {
-  padding: 8px 12px;
-  background: #F8FAFC;
-  border-left: 1px solid #E5E7EB;
-  color: #6B7280;
-}
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            margin-top: 40px;
+        }
 
-.helper-text {
-  font-size: 12px;
-  color: #6B7280;
-  margin-bottom: 16px;
-  display: flex;
-  justify-content: space-between;
-}
+        /* Staking UI */
+        .account-staking-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 24px;
+            overflow: hidden;
+            background: white;
+        }
 
-.error-msg {
-  color: #EF4444;
-  font-size: 12px;
-  margin-bottom: 16px;
-}
+        .account-staking-header {
+            background: #F8FAFC;
+            padding: 12px 16px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
 
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 24px;
-}
-</style>
+        .mini-table th, .mini-table td {
+            padding: 10px 16px;
+            position: static;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            margin-left: 4px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: white; border-color: var(--border); color: var(--text-main); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal {
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 8px;
+            width: 360px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal h3 { margin-top: 0; margin-bottom: 4px; }
+        .modal-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; margin-top: 0; }
+
+        .input-wrapper {
+            display: flex;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .input-wrapper span {
+            padding: 10px 12px;
+            background: #F8FAFC;
+            border-left: 1px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .helper-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 12px;
+            margin-bottom: 16px;
+            display: none;
+            background: #FEF2F2;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #FCA5A5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-item">Dashboard</div>
+        <div class="sidebar-item">Accounts</div>
+        <div class="sidebar-item active">Account PowerTools</div>
+        <div class="sidebar-item">Transactions & Orders</div>
+    </div>
+
+    <div class="main-layout">
+        <div class="header">
+            <h1>Account PowerTools</h1>
+            <button class="btn btn-outline" onclick="resetDemo()">⟳ Reset Data</button>
+        </div>
+
+        <div class="content-area">
+            <div class="account-list-panel">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this.checked)"></th>
+                            <th>Account</th>
+                            <th>Name</th>
+                            <th>Market Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="powertools-panel">
+                <div class="tabs">
+                    <div class="tab" id="tab-Accounts" onclick="switchTab('Accounts')">Accounts</div>
+                    <div class="tab" id="tab-Models" onclick="switchTab('Models')">Models</div>
+                    <div class="tab active" id="tab-Staking" onclick="switchTab('Staking')">Staking ⚡</div>
+                </div>
+                
+                <div class="tab-content" id="rightPanelContent">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="stakingModal">
+        <div class="modal">
+            <h3 id="modalTitle">Stake Asset</h3>
+            <p class="modal-subtitle" id="modalAccountName">Account Name</p>
+            
+            <div class="input-wrapper">
+                <input type="number" id="amountInput" placeholder="0.00" step="0.01">
+                <span id="modalTicker">ETH</span>
+            </div>
+            
+            <div class="helper-text">
+                <span id="availableText">Available: 0.00</span>
+                <a href="#" style="color: var(--primary); text-decoration: none; font-weight: 600;" onclick="setMax(event)">Max</a>
+            </div>
+
+            <div class="error-msg" id="errorMsg"></div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px;">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmAction()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const initialState = {
+            '1239': {
+                id: '1239', name: 'Rao, Sidsel', marketValue: '$56,287.37',
+                assets: {
+                    ETH: { total: 100, available: 100, staked: 0, apy: '3.5%', rewards: 0 },
+                    SOL: { total: 5, available: 5, staked: 0, apy: '6.8%', rewards: 0 },
+                    BTC: { total: 2, available: 2, staked: 0, apy: '-', rewards: 0 }
+                }
+            },
+            '1240': {
+                id: '1240', name: 'Lucassen, Kennet', marketValue: '$90,263.37',
+                assets: {
+                    ETH: { total: 50, available: 10, staked: 40, apy: '3.5%', rewards: 1.2 },
+                    SOL: { total: 100, available: 100, staked: 0, apy: '6.8%', rewards: 0 }
+                }
+            },
+            '1241': {
+                id: '1241', name: 'Power, Moise', marketValue: '$90,320.18',
+                assets: {
+                    ETH: { total: 20, available: 20, staked: 0, apy: '3.5%', rewards: 0 }
+                }
+            }
+        };
+
+        let db = JSON.parse(JSON.stringify(initialState));
+        let selectedAccountIds = new Set(['1239']); // Auto-select first account on load
+        let activeTab = 'Staking';
+        let modalState = { accountId: null, action: null, ticker: null };
+
+        function renderAccountList() {
+            const tbody = document.getElementById('accountTableBody');
+            tbody.innerHTML = '';
+            let allChecked = true;
+            let anyChecked = false;
+
+            Object.values(db).forEach(acc => {
+                const isChecked = selectedAccountIds.has(acc.id);
+                if (!isChecked) allChecked = false;
+                if (isChecked) anyChecked = true;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleAccount('${acc.id}', this.checked)"></td>
+                    <td>${acc.id}</td>
+                    <td>${acc.name}</td>
+                    <td>${acc.marketValue}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const selectAllCb = document.getElementById('selectAllCb');
+            selectAllCb.checked = anyChecked && allChecked;
+            selectAllCb.indeterminate = anyChecked && !allChecked;
+        }
+
+        function toggleAccount(id, isChecked) {
+            if (isChecked) selectedAccountIds.add(id);
+            else selectedAccountIds.delete(id);
+            renderAccountList();
+            updateRightPanel();
+        }
+
+        function toggleSelectAll(isChecked) {
+            if (isChecked) {
+                Object.keys(db).forEach(id => selectedAccountIds.add(id));
+            } else {
+                selectedAccountIds.clear();
+            }
+            renderAccountList();
+            updateRightPanel();
+        }
+
+        function switchTab(tabName) {
+            activeTab = tabName;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            updateRightPanel();
+        }
+
+        function updateRightPanel() {
+            const content = document.getElementById('rightPanelContent');
+
+            if (selectedAccountIds.size === 0) {
+                content.innerHTML = `<div class="empty-state">No Accounts Selected - No Preview Available</div>`;
+                return;
+            }
+
+            if (activeTab !== 'Staking') {
+                content.innerHTML = `<div class="empty-state">${activeTab} view for ${selectedAccountIds.size} selected account(s).</div>`;
+                return;
+            }
+
+            content.innerHTML = ''; 
+            selectedAccountIds.forEach(id => {
+                const acc = db[id];
+                const card = document.createElement('div');
+                card.className = 'account-staking-card';
+                
+                let rowsHtml = '';
+                ['ETH', 'SOL'].forEach(ticker => {
+                    const asset = acc.assets[ticker];
+                    if (asset && asset.total > 0) {
+                        const disableStake = asset.available <= 0 ? 'disabled' : '';
+                        const disableUnstake = asset.staked <= 0 ? 'disabled' : '';
+                        
+                        rowsHtml += `
+                            <tr>
+                                <td><strong>${ticker}</strong></td>
+                                <td>${asset.total.toFixed(2)}</td>
+                                <td>${asset.staked.toFixed(2)}</td>
+                                <td>${asset.rewards.toFixed(2)}</td>
+                                <td style="color: var(--success); font-weight:500;">${asset.apy}</td>
+                                <td style="text-align: right;">
+                                    <button class="btn btn-primary" ${disableStake} onclick="openModal('${id}', 'stake', '${ticker}')">Stake</button>
+                                    <button class="btn btn-secondary" ${disableUnstake} onclick="openModal('${id}', 'unstake', '${ticker}')">Unstake</button>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                if (!rowsHtml) rowsHtml = `<tr><td colspan="6" style="text-align:center; color: #6B7280; padding: 20px;">No stakable assets.</td></tr>`;
+
+                card.innerHTML = `
+                    <div class="account-staking-header">${acc.name} (${acc.id})</div>
+                    <table class="mini-table">
+                        <thead>
+                            <tr><th>Asset</th><th>Total</th><th>Staked</th><th>Earned</th><th>Yield</th><th style="text-align: right;">Actions</th></tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                `;
+                content.appendChild(card);
+            });
+        }
+
+        function openModal(accountId, action, ticker) {
+            modalState = { accountId, action, ticker };
+            const asset = db[accountId].assets[ticker];
+            const max = action === 'stake' ? asset.available : asset.staked;
+            
+            document.getElementById('modalTitle').innerText = action === 'stake' ? `Stake ${ticker}` : `Unstake ${ticker}`;
+            document.getElementById('modalAccountName').innerText = `Account: ${db[accountId].name} (${accountId})`;
+            document.getElementById('modalTicker').innerText = ticker;
+            document.getElementById('availableText').innerText = `Available to ${action}: ${max.toFixed(2)} ${ticker}`;
+            document.getElementById('amountInput').value = '';
+            document.getElementById('errorMsg').style.display = 'none';
+            document.getElementById('stakingModal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('stakingModal').style.display = 'none'; }
+
+        function setMax(e) {
+            e.preventDefault();
+            const asset = db[modalState.accountId].assets[modalState.ticker];
+            document.getElementById('amountInput').value = modalState.action === 'stake' ? asset.available : asset.staked;
+        }
+
+        function confirmAction() {
+            const amount = parseFloat(document.getElementById('amountInput').value);
+            const { accountId, action, ticker } = modalState;
+            const asset = db[accountId].assets[ticker];
+            const max = action === 'stake' ? asset.available : asset.staked;
+
+            document.getElementById('errorMsg').style.display = 'none';
+
+            if (isNaN(amount) || amount <= 0) return showError('Please enter a valid amount.');
+            if (amount > max) return showError(`Amount exceeds available balance (${max.toFixed(2)}).`);
+
+            if (action === 'stake') {
+                if (ticker === 'ETH' && amount < 32) return showError('Minimum stake for Ethereum is 32 ETH.');
+                if (ticker === 'SOL' && amount < 2) return showError('Minimum stake for Solana is 2 SOL.');
+                asset.available -= amount;
+                asset.staked += amount;
+            } else {
+                asset.staked -= amount;
+                asset.available += amount;
+            }
+
+            closeModal();
+            updateRightPanel();
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.innerText = msg;
+            el.style.display = 'block';
+        }
+
+        function resetDemo() {
+            db = JSON.parse(JSON.stringify(initialState));
+            selectedAccountIds = new Set(['1239']);
+            renderAccountList();
+            updateRightPanel();
+        }
+
+        // Init
+        renderAccountList();
+        updateRightPanel();
+    </script>
+</body>
+</html>
