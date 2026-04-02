@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account PowerTools - Bulk Staking Prototype</title>
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --bg-main: #F4F5F7;
+            --surface: #FFFFFF;
+            --border: #E5E7EB;
+            --primary: #4F46E5;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --bg-muted: #F8FAFC;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+        }
+
+        /* Sidebar & Layout */
+        .sidebar { width: 240px; background-color: var(--sidebar-bg); color: white; padding: 20px 0; display: flex; flex-direction: column; }
+        .sidebar-item { padding: 16px 24px; color: #9CA3AF; font-size: 14px; cursor: pointer; }
+        .sidebar-item.active { background-color: white; color: var(--text-main); font-weight: 600; border-radius: 8px 0 0 8px; margin-left: 12px; }
+        .main-layout { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .header { background-color: var(--surface); padding: 20px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 24px; color: #0F172A; }
+        .content-area { display: flex; flex: 1; overflow: hidden; padding: 24px; gap: 24px; }
+
+        /* Left Panel - Accounts */
+        .account-list-panel { flex: 1; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th { background-color: var(--bg-muted); padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-muted); font-weight: 600; position: sticky; top: 0; z-index: 10; }
+        td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        tr:hover { background-color: var(--bg-muted); }
+
+        /* Right Panel - PowerTools */
+        .powertools-panel { width: 650px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; }
+        .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-muted); }
+        .tab { padding: 12px 24px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-right: 1px solid var(--border); }
+        .tab.active { background: var(--surface); color: var(--primary); border-bottom: 2px solid var(--primary); }
+        .tab-content { padding: 24px; overflow-y: auto; flex: 1; }
+        .empty-state { text-align: center; color: var(--text-muted); margin-top: 40px; }
+
+        /* Buttons & Forms */
+        .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: white; border-color: var(--border); color: var(--text-main); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+        .actions-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+        
+        /* Flow UI Elements */
+        .flow-container { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 24px; }
+        .flow-header { font-size: 18px; font-weight: 600; margin-bottom: 24px; margin-top: 0;}
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+        .form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none; }
+        .form-control:focus { border-color: var(--primary); }
+        .form-control:disabled { background-color: #F3F4F6; color: var(--text-muted); font-weight: 600;}
+        .input-group { display: flex; gap: 8px; }
+        
+        /* Strategy Selector Cards */
+        .strategy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;}
+        .strategy-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: 0.2s; }
+        .strategy-card:hover { border-color: var(--primary); background: #EEF2FF; }
+        .strategy-card.selected { border-color: var(--primary); background: #EEF2FF; box-shadow: 0 0 0 1px var(--primary); }
+        .strategy-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; display: flex; justify-content: space-between;}
+        .strategy-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+        .yield-badge { color: var(--success); font-weight: 600; font-size: 12px; }
+
+        /* Mini view for default state */
+        .account-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+        .account-card-header { background: var(--bg-muted); padding: 10px 16px; font-weight: 600; font-size: 13px; border-bottom: 1px solid var(--border); }
+        .mini-table th, .mini-table td { padding: 8px 16px; font-size: 12px; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .status-success { background: #D1FAE5; color: #065F46; }
+        .status-error { background: #FEE2E2; color: #991B1B; }
+        .token-tag { background: var(--bg-muted); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600;}
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-item">Dashboard</div>
+        <div class="sidebar-item">Accounts</div>
+        <div class="sidebar-item active">Account PowerTools</div>
+        <div class="sidebar-item">Transactions & Orders</div>
+    </div>
+
+    <div class="main-layout">
+        <div class="header">
+            <h1>Account PowerTools</h1>
+            <button class="btn btn-outline" onclick="resetDemo()">⟳ Reset Data</button>
+        </div>
+
+        <div class="content-area">
+            <div class="account-list-panel">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this.checked)"></th>
+                            <th>Account</th>
+                            <th>Name</th>
+                            <th>Market Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="powertools-panel">
+                <div class="tabs">
+                    <div class="tab" id="tab-Accounts">Accounts</div>
+                    <div class="tab" id="tab-Models">Models</div>
+                    <div class="tab active" id="tab-Staking">Staking ⚡</div>
+                </div>
+                
+                <div class="tab-content" id="rightPanelContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Database State
+        const initialState = {
+            '1239': { id: '1239', name: 'Rao, Sidsel', marketValue: '$56,287.37', assets: { 
+                ETH: { available: 100, nativeStaked: 35 }, stETH: { available: 10 }, 
+                SOL: { available: 5, nativeStaked: 0 }, JitoSOL: { available: 0 } 
+            }},
+            '1240': { id: '1240', name: 'Lucassen, Kennet', marketValue: '$90,263.37', assets: { 
+                ETH: { available: 10, nativeStaked: 40 }, stETH: { available: 0 }, 
+                SOL: { available: 100, nativeStaked: 0 }, JitoSOL: { available: 50 } 
+            }},
+            '1241': { id: '1241', name: 'Power, Moise', marketValue: '$90,320.18', assets: { 
+                ETH: { available: 20, nativeStaked: 0 }, stETH: { available: 0 },
+                SOL: { available: 0, nativeStaked: 0 }, JitoSOL: { available: 0 } 
+            }}, 
+            '1242': { id: '1242', name: 'Aguilar, Clemence', marketValue: '$56,448.14', assets: { 
+                ETH: { available: 250, nativeStaked: 100 }, stETH: { available: 50 }, 
+                SOL: { available: 0, nativeStaked: 5 }, JitoSOL: { available: 0 } 
+            }}
+        };
+
+        // Constants for Protocol Rules
+        const PROTOCOL_RULES = {
+            ETH: { 
+                nativeMin: 32, liquidMin: 0.01, liquidToken: 'stETH', 
+                liquidRate: 1.00, yieldNative: '3.2%', yieldLiquid: '3.0%' 
+            },
+            SOL: { 
+                nativeMin: 2, liquidMin: 0.1, liquidToken: 'JitoSOL', 
+                liquidRate: 0.92, yieldNative: '6.5%', yieldLiquid: '7.1%' 
+            } // 1 SOL = 0.92 JitoSOL (Value-accruing example)
+        };
+
+        let db = JSON.parse(JSON.stringify(initialState));
+        let selectedAccountIds = new Set(['1239', '1240', '1241', '1242']); 
+        
+        // Flow State
+        let currentView = 'default'; 
+        let flowAction = ''; 
+        let flowAsset = 'ETH';
+        let flowStrategy = 'liquid'; // 'native' or 'liquid'
+        let flowAmount = 0;
+        let isMaxMode = false;
+        let validAccountsCache = []; 
+
+        // --- Core Rendering Logic ---
+        function renderAccountList() {
+            const tbody = document.getElementById('accountTableBody');
+            tbody.innerHTML = '';
+            let allChecked = true;
+            let anyChecked = false;
+
+            Object.values(db).forEach(acc => {
+                const isChecked = selectedAccountIds.has(acc.id);
+                if (!isChecked) allChecked = false;
+                if (isChecked) anyChecked = true;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleAccount('${acc.id}', this.checked)"></td>
+                        <td>${acc.id}</td>
+                        <td>${acc.name}</td>
+                        <td>${acc.marketValue}</td>
+                    </tr>
+                `;
+            });
+
+            const selectAllCb = document.getElementById('selectAllCb');
+            selectAllCb.checked = anyChecked && allChecked;
+            selectAllCb.indeterminate = anyChecked && !allChecked;
+        }
+
+        function toggleAccount(id, isChecked) {
+            isChecked ? selectedAccountIds.add(id) : selectedAccountIds.delete(id);
+            currentView !== 'default' ? cancelFlow() : renderRightPanel();
+            renderAccountList();
+        }
+
+        function toggleSelectAll(isChecked) {
+            isChecked ? Object.keys(db).forEach(id => selectedAccountIds.add(id)) : selectedAccountIds.clear();
+            currentView !== 'default' ? cancelFlow() : renderRightPanel();
+            renderAccountList();
+        }
+
+        // --- Right Panel Router ---
+        function renderRightPanel() {
+            const content = document.getElementById('rightPanelContent');
+            if (selectedAccountIds.size === 0) {
+                content.innerHTML = `<div class="empty-state">No Accounts Selected - No Preview Available</div>`;
+                return;
+            }
+
+            if (currentView === 'default') renderDefaultView(content);
+            else if (currentView === 'setup') renderSetupView(content);
+            else if (currentView === 'preview') renderPreviewView(content);
+        }
+
+        // --- View 1: Default ---
+        function renderDefaultView(container) {
+            let html = `
+                <div class="actions-bar">
+                    <div style="font-weight: 600; color: var(--text-main);">
+                        ${selectedAccountIds.size} Accounts Selected
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-primary" onclick="startFlow('stake')">Bulk Stake</button>
+                        <button class="btn btn-secondary" onclick="startFlow('unstake')">Bulk Unstake</button>
+                    </div>
+                </div>
+            `;
+
+            selectedAccountIds.forEach(id => {
+                const acc = db[id];
+                let rows = '';
+                
+                ['ETH', 'SOL'].forEach(ticker => {
+                    const asset = acc.assets[ticker];
+                    const lst = acc.assets[PROTOCOL_RULES[ticker].liquidToken];
+                    
+                    if(asset.available > 0 || asset.nativeStaked > 0 || lst.available > 0) {
+                        rows += `<tr>
+                            <td><strong>${ticker}</strong></td>
+                            <td>${asset.available.toFixed(2)}</td>
+                            <td>${asset.nativeStaked.toFixed(2)}</td>
+                            <td>${lst.available > 0 ? lst.available.toFixed(2) + ' <span class="token-tag">' + PROTOCOL_RULES[ticker].liquidToken + '</span>' : '-'}</td>
+                        </tr>`;
+                    }
+                });
+
+                html += `
+                    <div class="account-card">
+                        <div class="account-card-header">${acc.name} (${acc.id})</div>
+                        <table class="mini-table">
+                            <thead><tr><th>Base Asset</th><th>Available</th><th>Native Staked</th><th>Liquid Staked (LST)</th></tr></thead>
+                            <tbody>${rows || '<tr><td colspan="4">No assets</td></tr>'}</tbody>
+                        </table>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // --- View 2: Setup Form ---
+        function startFlow(action) {
+            currentView = 'setup';
+            flowAction = action;
+            isMaxMode = false;
+            flowStrategy = 'liquid'; // Defaulting to the new hotness
+            renderRightPanel();
+        }
+
+        function setStrategy(strategy) {
+            flowStrategy = strategy;
+            renderRightPanel();
+        }
+
+        function setAsset(asset) {
+            flowAsset = asset;
+            renderRightPanel();
+        }
+
+        function toggleMaxMode() {
+            isMaxMode = !isMaxMode;
+            renderRightPanel();
+        }
+
+        function renderSetupView(container) {
+            const title = flowAction === 'stake' ? 'Setup Bulk Stake' : 'Setup Bulk Unstake';
+            const actionText = flowAction === 'stake' ? 'Stake Max' : 'Unstake Max';
+            const rules = PROTOCOL_RULES[flowAsset];
+            
+            container.innerHTML = `
+                <div class="flow-container">
+                    <h2 class="flow-header">${title}</h2>
+                    
+                    <div class="form-group">
+                        <label>Select Asset</label>
+                        <select id="assetSelect" class="form-control" onchange="setAsset(this.value)">
+                            <option value="ETH" ${flowAsset === 'ETH' ? 'selected' : ''}>Ethereum (ETH)</option>
+                            <option value="SOL" ${flowAsset === 'SOL' ? 'selected' : ''}>Solana (SOL)</option>
+                        </select>
+                    </div>
+
+                    ${flowAction === 'stake' ? `
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">Staking Strategy</label>
+                    <div class="strategy-grid">
+                        <div class="strategy-card ${flowStrategy === 'liquid' ? 'selected' : ''}" onclick="setStrategy('liquid')">
+                            <div class="strategy-title">Liquid Staking <span class="yield-badge">${rules.yieldLiquid}</span></div>
+                            <div class="strategy-desc">Swap ${flowAsset} for ${rules.liquidToken}. No minimums. Tradable immediately.</div>
+                        </div>
+                        <div class="strategy-card ${flowStrategy === 'native' ? 'selected' : ''}" onclick="setStrategy('native')">
+                            <div class="strategy-title">Native Staking <span class="yield-badge">${rules.yieldNative}</span></div>
+                            <div class="strategy-desc">Lock ${flowAsset} on-chain. Requires minimum ${rules.nativeMin} ${flowAsset} per account.</div>
+                        </div>
+                    </div>` : `
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">Unstake Source</label>
+                    <div class="strategy-grid">
+                        <div class="strategy-card ${flowStrategy === 'liquid' ? 'selected' : ''}" onclick="setStrategy('liquid')">
+                            <div class="strategy-title">Swap LST to Native</div>
+                            <div class="strategy-desc">Sell ${rules.liquidToken} back to ${flowAsset}. Subject to market slippage.</div>
+                        </div>
+                        <div class="strategy-card ${flowStrategy === 'native' ? 'selected' : ''}" onclick="setStrategy('native')">
+                            <div class="strategy-title">Unstake Native</div>
+                            <div class="strategy-desc">Unlock ${flowAsset}. Must maintain ${rules.nativeMin} ${flowAsset} min balance.</div>
+                        </div>
+                    </div>
+                    `}
+
+                    <div class="form-group">
+                        <label>Amount (${flowAction === 'unstake' && flowStrategy === 'liquid' ? rules.liquidToken : flowAsset})</label>
+                        <div class="input-group">
+                            <input type="text" id="amountInput" class="form-control" placeholder="0.00" 
+                                value="${isMaxMode ? 'MAX (Auto-Calculated)' : flowAmount || ''}" 
+                                ${isMaxMode ? 'disabled' : ''} onchange="flowAmount = this.value">
+                            <button class="btn btn-secondary" onclick="toggleMaxMode()">${actionText}</button>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+                            ${flowStrategy === 'native' ? `Minimum ${rules.nativeMin} ${flowAsset} required.` : `Exchange Rate: 1 ${flowAsset} ≈ ${rules.liquidRate} ${rules.liquidToken}`}
+                        </p>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
+                        <button class="btn btn-secondary" onclick="cancelFlow()">Cancel</button>
+                        <button class="btn btn-primary" onclick="goToPreview()">Preview Flow</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- View 3: Preview ---
+        function goToPreview() {
+            if (!isMaxMode) {
+                const val = parseFloat(document.getElementById('amountInput').value);
+                if (isNaN(val) || val <= 0) return alert('Please enter a valid amount.');
+                flowAmount = val;
+            }
+            flowAsset = document.getElementById('assetSelect').value;
+            currentView = 'preview';
+            renderRightPanel();
+        }
+
+        function renderPreviewView(container) {
+            const rules = PROTOCOL_RULES[flowAsset];
+            validAccountsCache = []; 
+            let rowsHtml = '';
+
+            // Dynamic headers based on strategy
+            const inputCol = flowAction === 'stake' ? `Input (${flowAsset})` : (flowStrategy === 'liquid' ? `Sell (${rules.liquidToken})` : `Unlock (${flowAsset})`);
+            const outputCol = flowAction === 'stake' ? (flowStrategy === 'liquid' ? `Receive (${rules.liquidToken})` : `New Staked (${flowAsset})`) : `Receive (${flowAsset})`;
+
+            selectedAccountIds.forEach(id => {
+                const acc = db[id];
+                const baseAsset = acc.assets[flowAsset];
+                const lstAsset = acc.assets[rules.liquidToken];
+                
+                let statusMsg = 'Valid';
+                let isValid = true;
+                let amtInput = 0;
+                let amtOutput = 0;
+
+                if (!baseAsset) {
+                    isValid = false;
+                    statusMsg = 'Asset not held';
+                } else if (flowAction === 'stake') {
+                    // --- STAKE LOGIC ---
+                    amtInput = isMaxMode ? baseAsset.available : flowAmount;
+                    
+                    if (amtInput <= 0) { isValid = false; statusMsg = 'No available balance'; }
+                    else if (amtInput > baseAsset.available) { isValid = false; statusMsg = `Insufficient (${baseAsset.available.toFixed(2)})`; }
+                    else {
+                        if (flowStrategy === 'native') {
+                            if (baseAsset.nativeStaked + amtInput < rules.nativeMin) { isValid = false; statusMsg = `Min ${rules.nativeMin} required`; }
+                            else { amtOutput = baseAsset.nativeStaked + amtInput; } // Shows new total balance
+                        } else {
+                            if (amtInput < rules.liquidMin) { isValid = false; statusMsg = `Min ${rules.liquidMin} required`; }
+                            else { amtOutput = amtInput * rules.liquidRate; } // Shows tokens received
+                        }
+                    }
+                } else { 
+                    // --- UNSTAKE LOGIC ---
+                    if (flowStrategy === 'native') {
+                        amtInput = isMaxMode ? Math.max(0, baseAsset.nativeStaked - rules.nativeMin) : flowAmount;
+                        if (amtInput <= 0) { isValid = false; statusMsg = `Must keep ${rules.nativeMin} staked`; }
+                        else if (amtInput > baseAsset.nativeStaked) { isValid = false; statusMsg = `Exceeds staked (${baseAsset.nativeStaked})`; }
+                        else if ((baseAsset.nativeStaked - amtInput) < rules.nativeMin && (baseAsset.nativeStaked - amtInput) > 0) {
+                             isValid = false; statusMsg = `Leaves balance below min`;
+                        } else { amtOutput = baseAsset.available + amtInput; } // Shows new available balance
+                    } else {
+                        // Liquid Unstake (Swap LST to Base)
+                        amtInput = isMaxMode ? lstAsset.available : flowAmount;
+                        if (amtInput <= 0) { isValid = false; statusMsg = `No ${rules.liquidToken} to swap`; }
+                        else if (amtInput > lstAsset.available) { isValid = false; statusMsg = `Insufficient ${rules.liquidToken}`; }
+                        else { amtOutput = amtInput / rules.liquidRate; } // Shows base token received
+                    }
+                }
+
+                if (isValid) {
+                    validAccountsCache.push({ id, baseObj: baseAsset, lstObj: lstAsset, input: amtInput, output: amtOutput });
+                }
+
+                const badgeClass = isValid ? 'status-success' : 'status-error';
+                rowsHtml += `
+                    <tr>
+                        <td>${acc.name}</td>
+                        <td style="${isValid ? 'font-weight:600;' : 'color:var(--text-muted);'}">${amtInput > 0 ? amtInput.toFixed(2) : '-'}</td>
+                        <td>${isValid ? amtOutput.toFixed(2) : '-'}</td>
+                        <td><span class="status-badge ${badgeClass}">${statusMsg}</span></td>
+                    </tr>
+                `;
+            });
+
+            container.innerHTML = `
+                <div class="flow-container" style="padding: 0; overflow: hidden;">
+                    <div style="padding: 24px; border-bottom: 1px solid var(--border);">
+                        <h2 class="flow-header" style="margin: 0;">Preview ${flowStrategy === 'liquid' ? 'Liquid' : 'Native'} ${flowAction === 'stake' ? 'Stake' : 'Unstake'}</h2>
+                        <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--text-muted);">
+                            ${flowStrategy === 'liquid' ? `Exchange Rate applied: 1 ${flowAsset} = ${rules.liquidRate} ${rules.liquidToken}` : `Review lock-up balances.`} Invalid accounts will be skipped.
+                        </p>
+                    </div>
+                    <table style="width: 100%;">
+                        <thead style="background: var(--bg-muted);">
+                            <tr>
+                                <th>Account</th>
+                                <th>${inputCol}</th>
+                                <th>${outputCol}</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                    <div style="padding: 24px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); background: var(--bg-muted);">
+                        <button class="btn btn-secondary" onclick="currentView = 'setup'; renderRightPanel();">Back</button>
+                        <button class="btn btn-primary" ${validAccountsCache.length === 0 ? 'disabled' : ''} onclick="confirmFlow()">
+                            Confirm Execution (${validAccountsCache.length})
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Action Execution ---
+        function confirmFlow() {
+            validAccountsCache.forEach(item => {
+                if (flowAction === 'stake') {
+                    item.baseObj.available -= item.input;
+                    if (flowStrategy === 'native') item.baseObj.nativeStaked += item.input;
+                    else item.lstObj.available += item.output; // Mint LST
+                } else {
+                    if (flowStrategy === 'native') {
+                        item.baseObj.nativeStaked -= item.input;
+                        item.baseObj.available += item.input;
+                    } else {
+                        item.lstObj.available -= item.input; // Sell LST
+                        item.baseObj.available += item.output; // Receive Base
+                    }
+                }
+            });
+
+            currentView = 'default';
+            renderRightPanel();
+        }
+
+        function cancelFlow() { currentView = 'default'; renderRightPanel(); }
+
+        function resetDemo() {
+            db = JSON.parse(JSON.stringify(initialState));
+            selectedAccountIds = new Set(['1239', '1240', '1241', '1242']);
+            currentView = 'default';
+            renderAccountList();
+            renderRightPanel();
+        }
+
+        // Init App
+        renderAccountList();
+        renderRightPanel();
+    </script>
+</body>
+</html>
