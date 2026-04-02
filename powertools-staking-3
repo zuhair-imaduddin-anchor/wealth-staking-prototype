@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account PowerTools - Bulk Staking Prototype</title>
+    <style>
+        :root {
+            --sidebar-bg: #0B0E14;
+            --bg-main: #F4F5F7;
+            --surface: #FFFFFF;
+            --border: #E5E7EB;
+            --primary: #4F46E5;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+        }
+
+        /* Sidebar */
+        .sidebar { width: 240px; background-color: var(--sidebar-bg); color: white; padding: 20px 0; display: flex; flex-direction: column; }
+        .sidebar-item { padding: 16px 24px; color: #9CA3AF; font-size: 14px; cursor: pointer; }
+        .sidebar-item.active { background-color: white; color: var(--text-main); font-weight: 600; border-radius: 8px 0 0 8px; margin-left: 12px; }
+
+        /* Main Content */
+        .main-layout { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .header { background-color: var(--surface); padding: 20px 32px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 24px; color: #0F172A; }
+        .content-area { display: flex; flex: 1; overflow: hidden; padding: 24px; gap: 24px; }
+
+        /* Left Panel - Accounts */
+        .account-list-panel { flex: 1; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th { background-color: #F8FAFC; padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-muted); font-weight: 600; position: sticky; top: 0; z-index: 10; }
+        td { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+        tr:hover { background-color: #F8FAFC; }
+
+        /* Right Panel - PowerTools */
+        .powertools-panel { width: 600px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; }
+        .tabs { display: flex; border-bottom: 1px solid var(--border); background: #F8FAFC; }
+        .tab { padding: 12px 24px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-right: 1px solid var(--border); }
+        .tab.active { background: var(--surface); color: var(--primary); border-bottom: 2px solid var(--primary); }
+        .tab-content { padding: 24px; overflow-y: auto; flex: 1; }
+        .empty-state { text-align: center; color: var(--text-muted); margin-top: 40px; }
+
+        /* Buttons */
+        .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: white; border-color: var(--border); color: var(--text-main); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+        .actions-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+        .actions-right { display: flex; gap: 12px; }
+
+        /* Flow UI Elements */
+        .flow-container { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 24px; }
+        .flow-header { font-size: 18px; font-weight: 600; margin-bottom: 24px; margin-top: 0;}
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+        .form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none; }
+        .form-control:focus { border-color: var(--primary); }
+        
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .status-success { background: #D1FAE5; color: #065F46; }
+        .status-error { background: #FEE2E2; color: #991B1B; }
+
+        /* Mini view for default state */
+        .account-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+        .account-card-header { background: #F8FAFC; padding: 10px 16px; font-weight: 600; font-size: 13px; border-bottom: 1px solid var(--border); }
+        .mini-table th, .mini-table td { padding: 8px 16px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-item">Dashboard</div>
+        <div class="sidebar-item">Accounts</div>
+        <div class="sidebar-item active">Account PowerTools</div>
+        <div class="sidebar-item">Transactions & Orders</div>
+    </div>
+
+    <div class="main-layout">
+        <div class="header">
+            <h1>Account PowerTools</h1>
+            <button class="btn btn-outline" onclick="resetDemo()">⟳ Reset Data</button>
+        </div>
+
+        <div class="content-area">
+            <div class="account-list-panel">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAllCb" onchange="toggleSelectAll(this.checked)"></th>
+                            <th>Account</th>
+                            <th>Name</th>
+                            <th>Market Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="powertools-panel">
+                <div class="tabs">
+                    <div class="tab" id="tab-Accounts">Accounts</div>
+                    <div class="tab" id="tab-Models">Models</div>
+                    <div class="tab active" id="tab-Staking">Staking ⚡</div>
+                </div>
+                
+                <div class="tab-content" id="rightPanelContent">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Database State
+        const initialState = {
+            '1239': { id: '1239', name: 'Rao, Sidsel', marketValue: '$56,287.37', assets: { ETH: { available: 100, staked: 0 }, SOL: { available: 5, staked: 0 } } },
+            '1240': { id: '1240', name: 'Lucassen, Kennet', marketValue: '$90,263.37', assets: { ETH: { available: 10, staked: 40 }, SOL: { available: 100, staked: 0 } } },
+            '1241': { id: '1241', name: 'Power, Moise', marketValue: '$90,320.18', assets: { ETH: { available: 20, staked: 0 } } }, // No SOL
+            '1242': { id: '1242', name: 'Aguilar, Clemence', marketValue: '$56,448.14', assets: { ETH: { available: 250, staked: 100 } } }
+        };
+
+        let db = JSON.parse(JSON.stringify(initialState));
+        let selectedAccountIds = new Set(['1239', '1240', '1241']); // Pre-select a few for demo
+        
+        // Flow State Management
+        let currentView = 'default'; // 'default', 'setup', 'preview'
+        let flowAction = ''; // 'stake' or 'unstake'
+        let flowAsset = 'ETH';
+        let flowAmount = 0;
+        let validAccountsCache = []; // Stores accounts that passed validation for confirm step
+
+        // --- Core Rendering Logic ---
+        function renderAccountList() {
+            const tbody = document.getElementById('accountTableBody');
+            tbody.innerHTML = '';
+            let allChecked = true;
+            let anyChecked = false;
+
+            Object.values(db).forEach(acc => {
+                const isChecked = selectedAccountIds.has(acc.id);
+                if (!isChecked) allChecked = false;
+                if (isChecked) anyChecked = true;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleAccount('${acc.id}', this.checked)"></td>
+                    <td>${acc.id}</td>
+                    <td>${acc.name}</td>
+                    <td>${acc.marketValue}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const selectAllCb = document.getElementById('selectAllCb');
+            selectAllCb.checked = anyChecked && allChecked;
+            selectAllCb.indeterminate = anyChecked && !allChecked;
+        }
+
+        function toggleAccount(id, isChecked) {
+            if (isChecked) selectedAccountIds.add(id);
+            else selectedAccountIds.delete(id);
+            if(currentView !== 'default') cancelFlow(); // Reset flow if selection changes
+            else renderRightPanel();
+            renderAccountList();
+        }
+
+        function toggleSelectAll(isChecked) {
+            if (isChecked) Object.keys(db).forEach(id => selectedAccountIds.add(id));
+            else selectedAccountIds.clear();
+            if(currentView !== 'default') cancelFlow();
+            else renderRightPanel();
+            renderAccountList();
+        }
+
+        // --- Right Panel Router ---
+        function renderRightPanel() {
+            const content = document.getElementById('rightPanelContent');
+
+            if (selectedAccountIds.size === 0) {
+                content.innerHTML = `<div class="empty-state">No Accounts Selected - No Preview Available</div>`;
+                return;
+            }
+
+            if (currentView === 'default') renderDefaultView(content);
+            else if (currentView === 'setup') renderSetupView(content);
+            else if (currentView === 'preview') renderPreviewView(content);
+        }
+
+        // --- View 1: Default ---
+        function renderDefaultView(container) {
+            let html = `
+                <div class="actions-bar">
+                    <div style="font-weight: 600; color: var(--text-main);">
+                        ${selectedAccountIds.size} Accounts Selected
+                    </div>
+                    <div class="actions-right">
+                        <button class="btn btn-primary" onclick="startFlow('stake')">Bulk Stake</button>
+                        <button class="btn btn-secondary" onclick="startFlow('unstake')">Bulk Unstake</button>
+                    </div>
+                </div>
+            `;
+
+            selectedAccountIds.forEach(id => {
+                const acc = db[id];
+                let rows = '';
+                ['ETH', 'SOL'].forEach(ticker => {
+                    if(acc.assets[ticker]) {
+                        rows += `<tr>
+                            <td><strong>${ticker}</strong></td>
+                            <td>${acc.assets[ticker].available.toFixed(2)}</td>
+                            <td>${acc.assets[ticker].staked.toFixed(2)}</td>
+                        </tr>`;
+                    }
+                });
+
+                html += `
+                    <div class="account-card">
+                        <div class="account-card-header">${acc.name} (${acc.id})</div>
+                        <table class="mini-table">
+                            <thead><tr><th>Asset</th><th>Available</th><th>Staked</th></tr></thead>
+                            <tbody>${rows || '<tr><td colspan="3">No assets</td></tr>'}</tbody>
+                        </table>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // --- View 2: Setup Form ---
+        function startFlow(action) {
+            currentView = 'setup';
+            flowAction = action;
+            renderRightPanel();
+        }
+
+        function renderSetupView(container) {
+            const title = flowAction === 'stake' ? 'Setup Bulk Stake' : 'Setup Bulk Unstake';
+            
+            container.innerHTML = `
+                <div class="flow-container">
+                    <h2 class="flow-header">${title}</h2>
+                    <div class="form-group">
+                        <label>Select Asset</label>
+                        <select id="assetSelect" class="form-control">
+                            <option value="ETH">Ethereum (ETH)</option>
+                            <option value="SOL">Solana (SOL)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount (Applied to EACH selected account)</label>
+                        <input type="number" id="amountInput" class="form-control" placeholder="0.00" step="0.01">
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
+                        <button class="btn btn-secondary" onclick="cancelFlow()">Cancel</button>
+                        <button class="btn btn-primary" onclick="goToPreview()">Preview ${flowAction === 'stake' ? 'Stake' : 'Unstake'}</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- View 3: Preview ---
+        function goToPreview() {
+            const val = parseFloat(document.getElementById('amountInput').value);
+            if (isNaN(val) || val <= 0) {
+                alert('Please enter a valid amount.');
+                return;
+            }
+            flowAmount = val;
+            flowAsset = document.getElementById('assetSelect').value;
+            currentView = 'preview';
+            renderRightPanel();
+        }
+
+        function renderPreviewView(container) {
+            const title = flowAction === 'stake' ? 'Preview Bulk Stake' : 'Preview Bulk Unstake';
+            const resultingColHeader = flowAction === 'stake' ? 'Available After' : 'Remaining Staked';
+            validAccountsCache = []; // Reset valid list
+            let rowsHtml = '';
+
+            selectedAccountIds.forEach(id => {
+                const acc = db[id];
+                const asset = acc.assets[flowAsset];
+                
+                let statusMsg = 'Valid';
+                let isValid = true;
+                let resultingBalance = 0;
+
+                // Validation Logic
+                if (!asset) {
+                    isValid = false;
+                    statusMsg = 'Asset not held';
+                    resultingBalance = 0;
+                } else if (flowAction === 'stake') {
+                    if (flowAmount > asset.available) {
+                        isValid = false;
+                        statusMsg = `Not enough available (${asset.available})`;
+                    } else if (flowAsset === 'ETH' && flowAmount < 32) {
+                        isValid = false;
+                        statusMsg = 'Min 32 ETH required';
+                    } else if (flowAsset === 'SOL' && flowAmount < 2) {
+                        isValid = false;
+                        statusMsg = 'Min 2 SOL required';
+                    } else {
+                        resultingBalance = asset.available - flowAmount;
+                    }
+                } else { // Unstake
+                    if (flowAmount > asset.staked) {
+                        isValid = false;
+                        statusMsg = `Exceeds staked (${asset.staked})`;
+                    } else {
+                        resultingBalance = asset.staked - flowAmount;
+                    }
+                }
+
+                if (isValid) validAccountsCache.push({ id, assetObj: asset });
+
+                const badgeClass = isValid ? 'status-success' : 'status-error';
+                
+                rowsHtml += `
+                    <tr>
+                        <td>${acc.name}</td>
+                        <td>${flowAmount} ${flowAsset}</td>
+                        <td>${isValid ? resultingBalance.toFixed(2) : '-'}</td>
+                        <td><span class="status-badge ${badgeClass}">${statusMsg}</span></td>
+                    </tr>
+                `;
+            });
+
+            container.innerHTML = `
+                <div class="flow-container" style="padding: 0; overflow: hidden;">
+                    <div style="padding: 24px; border-bottom: 1px solid var(--border);">
+                        <h2 class="flow-header" style="margin: 0;">${title}</h2>
+                        <p style="margin: 8px 0 0 0; font-size: 13px; color: var(--text-muted);">
+                            Review the impact across all selected accounts. Invalid accounts will be skipped.
+                        </p>
+                    </div>
+                    <table style="width: 100%;">
+                        <thead style="background: #F8FAFC;">
+                            <tr>
+                                <th>Account</th>
+                                <th>${flowAction === 'stake' ? 'Staking' : 'Unstaking'}</th>
+                                <th>${resultingColHeader}</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                    <div style="padding: 24px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); background: #F8FAFC;">
+                        <button class="btn btn-secondary" onclick="currentView = 'setup'; renderRightPanel();">Back</button>
+                        <button class="btn btn-primary" ${validAccountsCache.length === 0 ? 'disabled' : ''} onclick="confirmFlow()">
+                            Confirm Valid (${validAccountsCache.length})
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Action Execution ---
+        function confirmFlow() {
+            // Apply math only to valid accounts
+            validAccountsCache.forEach(item => {
+                if (flowAction === 'stake') {
+                    item.assetObj.available -= flowAmount;
+                    item.assetObj.staked += flowAmount;
+                } else {
+                    item.assetObj.staked -= flowAmount;
+                    item.assetObj.available += flowAmount;
+                }
+            });
+
+            // Return to default
+            currentView = 'default';
+            renderRightPanel();
+            
+            // Re-render left panel in case any market value/summary needed updates (omitted for brevity)
+        }
+
+        function cancelFlow() {
+            currentView = 'default';
+            renderRightPanel();
+        }
+
+        function resetDemo() {
+            db = JSON.parse(JSON.stringify(initialState));
+            selectedAccountIds = new Set(['1239', '1240', '1241']);
+            currentView = 'default';
+            renderAccountList();
+            renderRightPanel();
+        }
+
+        // Init App
+        renderAccountList();
+        renderRightPanel();
+    </script>
+</body>
+</html>
